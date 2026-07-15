@@ -850,18 +850,8 @@
     getDatabase, ref, set, push, get, remove, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
 
- // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCgek5jmAeF_HBe1YD-mO8eLXdAL6q-wfU",
-  authDomain: "uyir-blood-app.firebaseapp.com",
-  databaseURL: "https://uyir-blood-app-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "uyir-blood-app",
-  storageBucket: "uyir-blood-app.firebasestorage.app",
-  messagingSenderId: "271995911666",
-  appId: "1:271995911666:web:946194f480992018f2bf6b",
-  measurementId: "G-91QP3LFVPL"
-};
-
+  <script src="config.js"></script>
+ 
   const app = initializeApp(firebaseConfig);
   window.fbAuth = getAuth(app);
   window.fbDB = getDatabase(app);
@@ -1366,7 +1356,6 @@ function makeCall(key, name){
  * For REGISTER, the Privacy Policy + Terms checkboxes are mandatory
  * and are gated BEFORE any method can be chosen.                        */
 var verifiedEmail   = { login:'', register:'' };   /* google-verified email */
-var demoGoogleAccounts = ['donor.demo1@gmail.com', 'donor.demo2@gmail.com', 'donor.demo3@gmail.com'];
 
 /* ---------- OTP daily limit (max 10 per day) + counter ----------
  * Stored in localStorage keyed by today's date. Non-sensitive. */
