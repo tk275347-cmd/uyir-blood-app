@@ -321,6 +321,12 @@
     padding:16px 14px;text-align:center;margin-bottom:16px;}
   .dp-id-big{font-weight:800;color:var(--red-dark);font-size:19px;word-break:break-all;margin-top:4px;}
   .dp-amt{margin-top:8px;font-weight:600;color:var(--ink);}
+  /* ---- Share-app QR modal ---- */
+  .share-qr-wrap{display:flex;justify-content:center;padding:16px;margin-bottom:14px;
+    background:#fff;border:1.5px solid var(--line);border-radius:16px;}
+  .share-qr-wrap img{width:210px;height:210px;border-radius:8px;}
+  .share-link-box{background:var(--red-soft);border:1px solid #f3caca;border-radius:12px;
+    padding:11px 13px;margin-bottom:14px;word-break:break-all;font-size:13px;font-weight:600;color:var(--red-dark);}
   .modal h3{font-size:18px;font-weight:700;margin-bottom:6px;}
   .modal p{font-size:13.5px;color:var(--muted);line-height:1.6;margin-bottom:12px;}
   .install-guide{margin:4px 0 16px;}
@@ -804,6 +810,12 @@
           <span class="li-tx"><span class="a">தனியுரிமைக் கொள்கை</span><span class="b">Privacy Policy</span></span>
           <span class="arr" aria-hidden="true">›</span>
         </button>
+        <div class="section-title" style="margin-top:22px;">பகிரவும்</div>
+        <button class="list-item" type="button" onclick="openShareApp()">
+          <span class="li-ic" aria-hidden="true">📲</span>
+          <span class="li-tx"><span class="a">ஆப்பை பகிரவும்</span><span class="b">QR கோடு ஸ்கேன் செய்து டவுன்லோட் செய்யலாம்</span></span>
+          <span class="arr" aria-hidden="true">›</span>
+        </button>
         <div class="section-title" style="margin-top:22px;">ஆபத்து மண்டலம்</div>
         <button class="list-item danger" type="button" onclick="openDelete()">
           <span class="li-ic" aria-hidden="true">🗑️</span>
@@ -821,10 +833,9 @@
   <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
     <div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="விவரம்" onclick="event.stopPropagation()"></div>
   </div>
-</div>
 
 <!-- ============================================================
-\u003Cspan class=\"arr\" aria-hidden=\"true\">›\u003C/span>     FIREBASE — MODULAR (ESM v10.12.2) SDK, imported from gstatic CDN.
+     FIREBASE — MODULAR (ESM v10.12.2) SDK, imported from gstatic CDN.
      Uses the real modular API (initializeApp, getAuth, getDatabase,
      signInWithPopup, createUserWithEmailAndPassword, signInWithPhoneNumber,
      RecaptchaVerifier, ref/set/push/serverTimestamp …).
@@ -832,19 +843,27 @@
      exposed so the rest of the single-file app keeps working unchanged.
      ========================================================== -->
  <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, signInWithPhoneNumber, GoogleAuthProvider, RecaptchaVerifier } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getDatabase, ref, set, push, get, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import {
+    getAuth, signInWithPhoneNumber, GoogleAuthProvider, RecaptchaVerifier,
+    signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+    signOut, deleteUser
+  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import {
+    getDatabase, ref, set, push, get, remove, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCgek5jmAeF_HBe1YD-mO8eLXdAL6q-wfU",
-    authDomain: "uyir-blood-app.firebaseapp.com",
-    databaseURL: "https://uyir-blood-app-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "uyir-blood-app",
-    storageBucket: "uyir-blood-app.firebasestorage.app",
-    messagingSenderId: "271995911666",
-    appId: "1:271995911666:web:946194f480992018f2bf6b"
-  };
+ // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCgek5jmAeF_HBe1YD-mO8eLXdAL6q-wfU",
+  authDomain: "uyir-blood-app.firebaseapp.com",
+  databaseURL: "https://uyir-blood-app-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "uyir-blood-app",
+  storageBucket: "uyir-blood-app.firebasestorage.app",
+  messagingSenderId: "271995911666",
+  appId: "1:271995911666:web:946194f480992018f2bf6b",
+  measurementId: "G-91QP3LFVPL"
+};
 
   const app = initializeApp(firebaseConfig);
   window.fbAuth = getAuth(app);
@@ -852,6 +871,20 @@
   window.fbReady = true;
   window.GoogleAuthProvider = GoogleAuthProvider;
   window.RecaptchaVerifier = RecaptchaVerifier;
+
+  /* Thin wrappers so the plain (non-module) script below — which cannot
+     use `import` — can call the modular functions by name via window.fb* */
+  window.fbSignInPopup   = function (provider) { return signInWithPopup(window.fbAuth, provider); };
+  window.fbSignInEmail   = function (email, pw) { return signInWithEmailAndPassword(window.fbAuth, email, pw); };
+  window.fbCreateEmail   = function (email, pw) { return createUserWithEmailAndPassword(window.fbAuth, email, pw); };
+  window.fbSignInPhone   = function (phone, verifier) { return signInWithPhoneNumber(window.fbAuth, phone, verifier); };
+  window.fbSignOut       = function () { return signOut(window.fbAuth); };
+  window.fbDeleteUser    = function (user) { return deleteUser(user || window.fbAuth.currentUser); };
+  window.fbDbSet         = function (path, data) { return set(ref(window.fbDB, path), data); };
+  window.fbDbPush        = function (path, data) { return push(ref(window.fbDB, path), data); };
+  window.fbDbRemove      = function (path) { return remove(ref(window.fbDB, path)); };
+  window.fbDbGet         = function (path) { return get(ref(window.fbDB, path)); };
+  window.fbServerTimestamp = function () { return serverTimestamp(); };
 
   console.log("Firebase Modular SDK initialized!");
   document.dispatchEvent(new Event('firebase-ready'));
@@ -879,19 +912,18 @@ document.addEventListener('firebase-ready', function () {
 
 /* ---- DB helpers: write registration / records / events ---- */
 function dbWrite(path, data) {
-  if (!window.fbReady || !window.fbDB) return Promise.resolve(false);
+  if (!window.fbReady || !window.fbDbPush) return Promise.resolve(false);
   try {
-    var ref = window.fbDB.ref(path).push();
-    return ref.set(Object.assign({ ts: window.firebase.database.ServerValue.TIMESTAMP }, data))
+    return window.fbDbPush(path, Object.assign({ ts: window.fbServerTimestamp() }, data))
       .then(function () { return true; })
       .catch(function (err) { console.warn('DB write failed:', err && err.message); return false; });
   } catch (e) { return Promise.resolve(false); }
 }
 function dbWriteUser(subtree, uid, data) {
-  if (!window.fbReady || !window.fbDB || !uid) return Promise.resolve(false);
+  if (!window.fbReady || !window.fbDbSet || !uid) return Promise.resolve(false);
   try {
-    return window.fbDB.ref(subtree + '/' + uid).set(
-      Object.assign({ ts: window.firebase.database.ServerValue.TIMESTAMP }, data))
+    return window.fbDbSet(subtree + '/' + uid,
+      Object.assign({ ts: window.fbServerTimestamp() }, data))
       .then(function () { return true; })
       .catch(function (err) { console.warn('DB write failed:', err && err.message); return false; });
   } catch (e) { return Promise.resolve(false); }
@@ -1020,7 +1052,7 @@ function stepRow(num, text){
 }
 
 /* platform-specific manual install வழிமுறையை modal-ல் காட்டு (crash-safe) */
- window.showInstallGuide = function () {
+ window.showInstallGuide = function (reason) {
   var m = scr('modal');
   m.textContent = '';
   m.appendChild(el('div','grab'));
@@ -1337,6 +1369,7 @@ function makeCall(key, name){
  * For REGISTER, the Privacy Policy + Terms checkboxes are mandatory
  * and are gated BEFORE any method can be chosen.                        */
 var verifiedEmail   = { login:'', register:'' };   /* google-verified email */
+var demoGoogleAccounts = ['donor.demo1@gmail.com', 'donor.demo2@gmail.com', 'donor.demo3@gmail.com'];
 
 /* ---------- OTP daily limit (max 10 per day) + counter ----------
  * Stored in localStorage keyed by today's date. Non-sensitive. */
@@ -1361,67 +1394,21 @@ function updateOtpCounterUI(){
     var el2 = scr(id); if(el2) el2.textContent = 'இன்று மீதம்: ' + otpRemaining() + '/' + OTP_DAILY_MAX + ' OTP';
   });
 }
-window.addEventListener('load', () => {
-    // இம்போர்ட் எல்லாம் லோட் ஆன பிறகுதான் இது இயங்கும்
-    if (window.getAuth) {
-        const auth = window.getAuth(); 
-        window.auth = auth;
-        
-        window.recaptchaVerifier = new window.RecaptchaVerifier(window.auth, 'recaptcha-container', {
+function setupRecaptcha(){
+    if (window.recaptchaVerifier || !window.fbReady || !window.RecaptchaVerifier) return;
+    try{
+        window.recaptchaVerifier = new window.RecaptchaVerifier(window.fbAuth, 'recaptcha-container', {
             'size': 'invisible',
-            'callback': (response) => {
-                console.log("reCAPTCHA வெற்றி");
-            }
+            'callback': function(response){ console.log("reCAPTCHA வெற்றி"); }
         });
-   } else {
-    // Firebase லோட் ஆகும் வரை காத்திருந்துவிட்டு பிறகு முயற்சி செய்யும்
-    console.log("Firebase இன்னும் லோட் ஆகவில்லை, காத்திருக்கிறோம்...");
-    setTimeout(function() {
-        // மீண்டும் ஒருமுறை முயற்சி செய்யும்
-        if (window.fbReady) {
-            // ஒருவேளை லோட் ஆகிவிட்டால், மீண்டும் Recaptcha செட் செய்யவும்
-            window.recaptchaVerifier = new window.RecaptchaVerifier(window.fbAuth, 'recaptcha-container', {
-                'size': 'invisible'
-            });
-        }
-   }, 1000); // 1386
-} 
-
-function sendOTP() {
-    // 1. Firebase லோட் ஆகிவிட்டதா என்று சோதிக்கவும்
-    if (typeof window.fbReady !== 'undefined' && window.fbReady) {
-        
-        var phoneInput = document.getElementById('phone').value;
-        var phoneNumber = phoneInput.startsWith('+') ? phoneInput : '+91' + phoneInput;
-        var appVerifier = window.recaptchaVerifier;
-
-        // 2. Firebase Modular முறையில் OTP அனுப்புதல்
-        window.fbAuth.signInWithPhoneNumber(phoneNumber, appVerifier)
-            .then(function (confirmationResult) {
-                window.confirmationResult = confirmationResult;
-                alert("OTP அனுப்பப்பட்டது!");
-            })
-            .catch(function (error) {
-                console.error("பிழை:", error);
-                
-                // பழைய கோடில் இருந்த அந்த முக்கிய எரர் சோதனைகள் இங்கே!
-                if (error.code === 'auth/operation-not-allowed') {
-                    alert("இந்த நாட்டில் SMS அனுமதிக்கப்படவில்லை, Firebase Console-ல் SMS region policy-ஐ சரிபார்க்கவும்.");
-                } else if (error.code === 'auth/invalid-phone-number') {
-                    alert("மொபைல் எண் தவறு!");
-                } else if (error.code === 'auth/too-many-requests') {
-                    alert("அதிக முயற்சிகள் - சிறிது நேரம் கழித்து முயலவும்.");
-                } else {
-                    alert("பிழை: " + error.message);
-                }
-            });
-
-    } else {
-        // 3. Firebase லோட் ஆகவில்லை என்றால், 1 வினாடி காத்திருந்து தானாகவே மீண்டும் முயற்சிக்கும்
-        console.warn("Firebase இன்னும் தயாராகவில்லை, காத்திருக்கிறோம்...");
-        setTimeout(sendOTP, 1000); 
-    }
+    }catch(e){ console.warn('reCAPTCHA setup failed:', e && e.message); }
 }
+window.addEventListener('load', () => {
+    // Firebase ஏற்கனவே தயாராக இருந்தால் உடனே செட் செய்யவும்
+    setupRecaptcha();
+    // இல்லையெனில் Firebase தயாராகும் போது (firebase-ready event) செட் செய்யவும்
+    document.addEventListener('firebase-ready', setupRecaptcha);
+});
 
 /* ---- helper: prefix + panel ids for a given mode ---- */
 function pfx(mode){ return (mode === 'login') ? 'lg' : 'rg'; }
@@ -1485,11 +1472,11 @@ function verifyGoogle(mode){
   /* Fallback: no Firebase → demo picker (keeps app usable offline) */
   if(!window.fbReady){ demoGooglePicker(mode); return; }
 
-  var provider = new firebase.auth.GoogleAuthProvider();
+  var provider = new window.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   showToast('Google சாளரம் திறக்கிறது…');
 
-  window.fbAuth.signInWithPopup(provider)
+  window.fbSignInPopup(provider)
     .then(function(result){
       var email = (result.user && result.user.email) || '';
       /* Save/merge donor profile in Realtime Database */
@@ -1498,7 +1485,7 @@ function verifyGoogle(mode){
         name: result.user.displayName || '',
         method: 'google',
         provider: 'google.com',
-        lastLogin: firebase.database.ServerValue.TIMESTAMP
+        lastLogin: window.fbServerTimestamp()
       });
       dbWrite('events', { type: 'google_verify', mode: mode, email: email });
       pickGoogle(mode, email);
@@ -1570,10 +1557,10 @@ function loginGmail(mode){   /* login path — REAL Firebase signInWithEmailAndP
     return;
   }
   setLoading('lgGmailSubmit', true);
-  window.fbAuth.signInWithEmailAndPassword(email, pw)
+  window.fbSignInEmail(email, pw)
     .then(function(cred){
       dbWriteUser('donors', cred.user.uid, { email: email, method: 'gmail',
-        lastLogin: firebase.database.ServerValue.TIMESTAMP });
+        lastLogin: window.fbServerTimestamp() });
       dbWrite('events', { type: 'gmail_login', email: email });
       setLoading('lgGmailSubmit', false);
       authSuccess('login','gmail');
@@ -1608,10 +1595,10 @@ function registerGmail(){   /* register path — REAL createUserWithEmailAndPass
     return;
   }
   setLoading('rgGmailSubmit', true);
-  window.fbAuth.createUserWithEmailAndPassword(email, pw)
+  window.fbCreateEmail(email, pw)
     .then(function(cred){
       dbWriteUser('donors', cred.user.uid, { email: email, method: 'gmail',
-        registeredAt: firebase.database.ServerValue.TIMESTAMP });
+        registeredAt: window.fbServerTimestamp() });
       dbWrite('events', { type: 'gmail_register', email: email });
       setLoading('rgGmailSubmit', false);
       authSuccess('register','gmail');
@@ -1673,11 +1660,11 @@ function startOtp(mode){
 
   setLoading('rgSubmit', true);
   /* A) create the Email/Password account first (verified Gmail) */
-  window.fbAuth.createUserWithEmailAndPassword(email, pw)
+  window.fbCreateEmail(email, pw)
     .then(function(cred){
       dbWriteUser('donors', cred.user.uid, {
         email: email, mobile: '+91' + mob, method: 'google+password+mobile',
-        registeredAt: firebase.database.ServerValue.TIMESTAMP
+        registeredAt: window.fbServerTimestamp()
       });
       dbWrite('events', { type: 'register', email: email, mobile: '+91' + mob });
     })
@@ -1692,7 +1679,7 @@ function startOtp(mode){
       /* B) send the mobile OTP */
       var verifier = ensureRecaptcha();
       if(!verifier){ setLoading('rgSubmit', false); bumpOtpCount(); openOtpModal('register', mob, true); return; }
-      return window.fbAuth.signInWithPhoneNumber('+91' + mob, verifier)
+      return window.fbSignInPhone('+91' + mob, verifier)
         .then(function(confResult){
           confirmationResult = confResult;
           bumpOtpCount();
@@ -1711,12 +1698,12 @@ function startOtp(mode){
 }
 function startMobileOtp(mode){
   var p = pfx(mode);
-  clearErrors([ + 'MobileNum']);
+  clearErrors([p + 'MobileNum']);
   var mob = onlyDigits(scr(p + 'MobileNum').value);
-  if (mob.length < 10 || mob.length > 13) { 
-    setFieldError('rcvMob', 'சரியான மொபைல் எண்ணை உள்ளிடவும்'); 
-    ok = false; 
-}
+  if (mob.length < 10 || mob.length > 13) {
+    setFieldError(p + 'MobileNum', 'சரியான மொபைல் எண்ணை உள்ளிடவும்');
+    return;
+  }
   /* Daily OTP limit (max 10/day) */
   if(otpRemaining() <= 0){
     setFieldError(p + 'MobileNum','இன்றைய OTP வரம்பு (10) முடிந்தது — நாளை முயலவும்');
@@ -1733,46 +1720,37 @@ function startMobileOtp(mode){
 
   /* REAL Firebase Phone Auth: RecaptchaVerifier + signInWithPhoneNumber */
   var verifier = ensureRecaptcha();
-    bumpOtpCount(); openOtpModal(mode, mob, true); return; }
+  if(!verifier){
+    setLoading(p + 'MobileSubmit', false);
+    bumpOtpCount();
+    openOtpModal(mode, mob, true);
+    return;
+  }
 
-  setLoading('MobileSubmit', true);
+  setLoading(p + 'MobileSubmit', true);
 
-if (window.fbAuth && typeof window.fbAuth.signInWithPhoneNumber === 'function') {
-    window.fbAuth.signInWithPhoneNumber('+91' + mob, verifier)
+  window.fbSignInPhone('+91' + mob, verifier)
     .then(function(confResult) {
         confirmationResult = confResult;
         bumpOtpCount();
         dbWrite('events', { type: 'otp_sent', mobile: '+91' + mob, mode: mode });
-        
-        // இங்கே 'p +' என்பதை நீக்கிவிட்டு 'MobileSubmit' என்று மட்டும் கொடுத்துள்ளேன்
-        setLoading('MobileSubmit', false); 
+        setLoading(p + 'MobileSubmit', false);
         openOtpModal(mode, mob, false);
     })
     .catch(function(err) {
-        setLoading('MobileSubmit', false);
+        setLoading(p + 'MobileSubmit', false);
         var c = err && err.code ? err.code : '';
         try { if(recaptchaVerifier) { recaptchaVerifier.clear(); recaptchaVerifier = null; } } catch(e) {}
         if(c === 'auth/too-many-requests') {
-            setFieldError('MobileNum', 'அதிக முயற்சிகள் — சிறிது நேரம் கழித்து முயலவும்');
+            setFieldError(p + 'MobileNum', 'அதிக முயற்சிகள் — சிறிது நேரம் கழித்து முயலவும்');
         } else if(c === 'auth/invalid-phone-number') {
-            setFieldError('MobileNum', 'மொபைல் நம்பர் தவறு');
+            setFieldError(p + 'MobileNum', 'மொபைல் நம்பர் தவறு');
         } else {
             showToast('OTP அனுப்ப முடியவில்லை: ' + (err && err.message ? err.message : c), true);
         }
     });
-if (window.fbReady) {
-    // Firebase ரெடியாக இருந்தால், உங்கள் லாஜிக் தொடரும்...
-    // sendOtp வேலைகளை இங்கே செய்யவும்
-} else {
-    // Firebase ரெடியாக இல்லை என்றால்:
-    console.warn("Firebase காத்திருக்கிறது...");
-    setLoading('MobileSubmit', false); // இதை நீக்காதீர்கள்! இது லோடிங்கை நிறுத்தி பட்டனை மீண்டும் கிளிக் செய்ய வைக்கும்.
-    
-    // பிறகு காத்திருந்து முயற்சிக்கும் கோடு
 }
-   setTimeout(sendOTP, 1000);
-}
- 
+
 function openOtpModal(mode, mob){
   var digits = 6;
   var m = scr('modal');
@@ -1843,7 +1821,7 @@ if (!window.fbReady || !confirmationResult) {
   confirmationResult.confirm(code)
     .then(function(result){
       dbWriteUser('donors', result.user.uid, { mobile: result.user.phoneNumber || '',
-        method: 'mobile', lastLogin: firebase.database.ServerValue.TIMESTAMP });
+        method: 'mobile', lastLogin: window.fbServerTimestamp() });
       dbWrite('events', { type: 'otp_verified', mobile: result.user.phoneNumber || '', mode: mode });
       setLoading('otpVerifyBtn', false);
       confirmationResult = null;
@@ -1995,18 +1973,46 @@ function openDelete(){
   openModal();
 }
 function doDelete(){
-  myRecords = [];
-  renderMyRecords();
-  scr('activeToggle').checked = false;
-  toggleActive(scr('activeToggle'), true);
-  try{ localStorage.removeItem(LS_KEY); }catch(e){}
-  closeModal();
-  showToast('கணக்கு நீக்கப்பட்டது');
-  setTimeout(function(){
-    stack = ['home'];
-    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active','left'); });
-    scr('home').classList.add('active');
-  }, 800);
+  var user = window.fbAuth && window.fbAuth.currentUser;
+
+  function finishDelete(msg){
+    myRecords = [];
+    renderMyRecords();
+    if(scr('activeToggle')) scr('activeToggle').checked = false;
+    toggleActive(scr('activeToggle'), true);
+    try{ localStorage.removeItem(LS_KEY); }catch(e){}
+    verifiedEmail = { login:'', register:'' };
+    closeModal();
+    showToast(msg || 'கணக்கு நீக்கப்பட்டது');
+    setTimeout(function(){
+      stack = ['home'];
+      document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active','left'); });
+      scr('home').classList.add('active');
+    }, 800);
+  }
+
+  if(user && window.fbReady){
+    var uid = user.uid;
+    /* remove the donor's public record so they stop appearing in searches */
+    if(window.fbDbRemove){ window.fbDbRemove('donors/' + uid).catch(function(){}); }
+
+    window.fbDeleteUser(user)
+      .then(function(){
+        return window.fbSignOut().catch(function(){});
+      })
+      .then(function(){ finishDelete('கணக்கு நிரந்தரமாக நீக்கப்பட்டது'); })
+      .catch(function(err){
+        var c = err && err.code ? err.code : '';
+        window.fbSignOut().catch(function(){});
+        if(c === 'auth/requires-recent-login'){
+          finishDelete('கணக்கிலிருந்து வெளியேறிவிட்டீர்கள். முழுமையாக நீக்க, மீண்டும் உள்நுழைந்து "கணக்கை நீக்கு"-ஐ மீண்டும் அழுத்தவும்.');
+        } else {
+          finishDelete('கணக்கு நீக்கப்பட்டது');
+        }
+      });
+  } else {
+    finishDelete();
+  }
 }
 
 /* ---------- Policy modal (static, trusted content) ---------- */
@@ -2207,6 +2213,51 @@ function showDesktopPay(amt){
 }
 /* ================= /UPI Donation ================= */
 
+/* ================= Share App (QR code) ================= */
+var APP_SHARE_URL = 'https://tk275347-cmd.github.io/uyir-blood-app/';
+
+function openShareApp(){
+  var m = scr('modal');
+  m.textContent = '';
+  m.appendChild(el('div','grab'));
+  m.appendChild(el('h3', null, '📲 ஆப்பை பகிரவும்'));
+  m.appendChild(el('p', null,
+    'இந்த QR கோடை மற்றவர்கள் ஸ்கேன் செய்தால், அவர்களின் மொபைலில் இந்த ஆப் திறக்கும் — அங்கிருந்து அவர்கள் Install/Add to Home Screen செய்யலாம்.'));
+
+  var qrWrap = el('div','share-qr-wrap');
+  var qrImg = document.createElement('img');
+  qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' + encodeURIComponent(APP_SHARE_URL);
+  qrImg.alt = 'ஆப் QR கோடு';
+  qrImg.loading = 'lazy';
+  qrWrap.appendChild(qrImg);
+  m.appendChild(qrWrap);
+
+  m.appendChild(el('div','share-link-box', https://uyir-blood-app.web.app/));
+
+  var copyBtn = el('button','primary-btn','📋 லிங்க் நகலெடு');
+  copyBtn.type = 'button';
+  copyBtn.addEventListener('click', function(){ copyText(https://uyir-blood-app.web.app/, '✅ லிங்க் நகலெடுக்கப்பட்டது'); });
+  m.appendChild(copyBtn);
+
+  if(navigator.share){
+    var shareBtn = el('button','ghost-btn','📤 பகிர்');
+    shareBtn.type = 'button';
+    shareBtn.addEventListener('click', function(){
+      navigator.share({ title: 'உயிர்காக்கும் இரத்தம் தானம்', text: 'இந்த இரத்த தான ஆப்பை பயன்படுத்துங்கள்:', url: https://uyir-blood-app.web.app/ })
+        .catch(function(){ /* user cancelled — ignore */ });
+    });
+    m.appendChild(shareBtn);
+  }
+
+  var closeBtn = el('button','ghost-btn','மூடு');
+  closeBtn.type = 'button';
+  closeBtn.addEventListener('click', function(){ closeModal(); });
+  m.appendChild(closeBtn);
+
+  openModal();
+}
+/* ================= /Share App ================= */
+
 function openPolicy(type, e){
   if(e){ e.preventDefault(); e.stopPropagation(); }
   var m = scr('modal');
@@ -2257,31 +2308,11 @@ updateOnline();
 updateOtpCounterUI();
 /* NOTE: Service worker is registered once in the PWA section above (installPWA block). */
 
- // உங்கள் கோப்பின் கடைசியில் இதைச் சேர்க்கவும்:
+/* Home footer buttons (donate / download-install) were missing their click wiring */
+if(scr('donateBtn'))  scr('donateBtn').addEventListener('click', function(){ window.donateUPI(); });
+if(scr('installBtn')) scr('installBtn').addEventListener('click', function(){ window.installPWA(); });
 
-window.addEventListener('load', () => {
-    // 1. பட்டன் பங்க்ஷன்களை இங்கே உறுதிப்படுத்துங்கள்
-    window.donateUPI = function() { 
-        if (typeof openDonateModal === 'function') openDonateModal(); 
-    };
 
-    window.installPWA = function() { 
-        if (typeof triggerInstallPrompt === 'function') triggerInstallPrompt(); 
-    };
-
-    window.go = function(id) { 
-        // உங்கள் 'go' பங்க்ஷன் ஏற்கனவே எங்கே இருந்தாலும், 
-        // பட்டன்கள் அதை இப்போது கண்டறிய முடியும்.
-        if (typeof navigateTo === 'function') navigateTo(id); 
-    };
-
-    // 2. Firebase Auth உறுதிப்படுத்துதல்
-    if (typeof getAuth !== 'undefined') {
-        window.fbAuth = getAuth();
-    }
-    
-    console.log("பட்டன்கள் மற்றும் Firebase தயாராகிவிட்டன!");
-});
 </script>
 <!-- invisible reCAPTCHA host for Firebase Phone Auth -->
 <div id="recaptcha-container"></div>
