@@ -434,9 +434,6 @@
           <span>டோனர்<small>இரத்த தானம் செய்பவர் — உள்நுழையுங்கள்</small></span>
         </button>
       </div>
-      <p class="maint-note" role="note">
-        <span aria-hidden="true">🛠️</span> இந்த டொனேஷன் ஆப் பராமரிப்புக்கு (maintenance) மட்டுமே
-      </p>
       <div class="home-footer">
        <button class="foot-btn" type="button" id="donateBtn">
     <span class="fi" aria-hidden="true">❤️</span> டொனேஷன்
@@ -1470,8 +1467,6 @@ function resetAuthScreens(){
  * If Firebase is unavailable, falls back to a demo account picker.       */
 function verifyGoogle(mode){
   /* Fallback: no Firebase → demo picker (keeps app usable offline) */
-  if(!window.fbReady){ demoGooglePicker(mode); return; }
-
   var provider = new window.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   showToast('Google சாளரம் திறக்கிறது…');
@@ -1501,23 +1496,7 @@ function verifyGoogle(mode){
       }
     });
 }
-/* Demo picker fallback (only when Firebase SDK is blocked/offline) */
-function demoGooglePicker(mode){
-  var m = scr('modal');
-  m.textContent = '';
-  m.appendChild(el('div','grab'));
-  m.appendChild(el('h3', null, '🔵 கணக்கை தேர்வு செய்யவும் (demo)'));
-  m.appendChild(el('p', null, 'Firebase இணைப்பு இல்லை — demo கணக்கு தேர்வு.'));
-  demoGoogleAccounts.forEach(function(em){
-    var row = el('button','g-account');
-    row.type = 'button';
-    row.appendChild(el('span','ga-av', em.charAt(0).toUpperCase()));
-    row.appendChild(el('span','ga-em', em));
-    row.addEventListener('click', function(){ pickGoogle(mode, em); });
-    m.appendChild(row);
-  });
-  openModal();
-}
+
 function pickGoogle(mode, email){
   closeModal();
   verifiedEmail[mode] = email;
