@@ -906,6 +906,23 @@ document.addEventListener('firebase-ready', function () {
   fbUser  = window.fbUser || null;
 });
 
+ /* --- RECAPTCHA HELPER (Modular SDK compliant) --- */
+function ensureRecaptcha() {
+  if (window.recaptchaVerifier) {
+     try { window.recaptchaVerifier.clear(); } catch(e) {}
+  }
+  
+  // window.RecaptchaVerifier என்பது மாடியூல் ஸ்கிரிப்ட்டில் இருந்து நாம் எக்ஸ்போர்ட் செய்தது
+  // auth என்பது window.fbAuth
+  window.recaptchaVerifier = new window.RecaptchaVerifier(window.fbAuth, 'recaptcha-container', {
+    'size': 'normal',
+    'callback': function(response) { console.log("reCAPTCHA verified!"); }
+  });
+  
+  window.recaptchaVerifier.render();
+  return window.recaptchaVerifier;
+}
+ 
 /* ---- DB helpers: write registration / records / events ---- */
 function dbWrite(path, data) {
   if (!window.fbReady || !window.fbDbPush) return Promise.resolve(false);
@@ -1602,16 +1619,27 @@ function registerMobile(){ startMobileOtp('register'); }
  * Step A: create the account with Email/Password (verified Gmail).
  * Step B: send mobile OTP (Phone Auth) → on verify → dashboard.
  * Daily OTP limit + password strength are enforced.                          */
+ 
  // இந்த பங்க்ஷனைப் புதிதாகச் சேர்த்துவிடுங்கள்
 function ensureRecaptcha() {
     if (window.recaptchaVerifier) {
-        try { window.recaptchaVerifier.clear(); } catch (e) {}
+        try { 
+            window.recaptchaVerifier.clear(); 
+        } catch (e) {
+            console.log("Error clearing old verifier", e);
+        }
     }
-    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+    
+    window.recaptchaVerifier = new window.RecaptchaVerifier(window.fbAuth, 'recaptcha-container', {
         'size': 'normal',
-        'callback': (response) => { console.log("reCAPTCHA verified!"); },
-        'expired-callback': () => { window.recaptchaVerifier.render(); }
+        'callback': (response) => { 
+            console.log("reCAPTCHA verified!"); 
+        },
+        'expired-callback': () => { 
+            window.recaptchaVerifier.render(); 
+        }
     });
+    
     window.recaptchaVerifier.render();
     return window.recaptchaVerifier;
 }
