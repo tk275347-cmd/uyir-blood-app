@@ -2244,7 +2244,7 @@ function openShareApp(){
     var shareBtn = el('button','ghost-btn','📤 பகிர்');
     shareBtn.type = 'button';
     shareBtn.addEventListener('click', function(){
-      navigator.share({ title: 'உயிர்காக்கும் இரத்தம் தானம்', text: 'இந்த இரத்த தான ஆப்பை பயன்படுத்துங்கள்:', "url: https://uyir-blood-app.web.app" })
+      navigator.share({ title: 'உயிர்காக்கும் இரத்தம் தானம்', text: 'இந்த இரத்த தான ஆப்பை பயன்படுத்துங்கள்:', 'url: https://uyir-blood-app.web.app' })
         .catch(function(){ /* user cancelled — ignore */ });
     });
     m.appendChild(shareBtn);
