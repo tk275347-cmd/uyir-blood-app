@@ -1604,15 +1604,15 @@ function registerMobile(){ startMobileOtp('register'); }
  * Daily OTP limit + password strength are enforced.                          */
  // இந்த பங்க்ஷனைப் புதிதாகச் சேர்த்துவிடுங்கள்
 function ensureRecaptcha() {
-    if (!window.recaptchaVerifier) {
-        // 'recaptcha-container' என்பது உங்கள் HTML-ல் உள்ள அந்த div-ன் ID
-        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-            'size': 'invisible',
-            'callback': (response) => {
-                console.log("Recaptcha verified!");
-            }
-        });
+    if (window.recaptchaVerifier) {
+        try { window.recaptchaVerifier.clear(); } catch (e) {}
     }
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+        'size': 'normal',
+        'callback': (response) => { console.log("reCAPTCHA verified!"); },
+        'expired-callback': () => { window.recaptchaVerifier.render(); }
+    });
+    window.recaptchaVerifier.render();
     return window.recaptchaVerifier;
 }
  
