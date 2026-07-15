@@ -1,0 +1,37 @@
+{
+  "name": "உயிர்காக்கும் இரத்தம் தானம்",
+  "short_name": "இரத்த தானம்",
+  "description": "இரத்த தான ஆப் — டோனர்கள் மற்றும் ரிசீவர்களை பாதுகாப்பாக இணைக்கும் தமிழ் தளம். Blood Donation App connecting donors and receivers.",
+  "lang": "ta",
+  "dir": "ltr",
+  "id": "/blood-donation-app_v10/",
+  "prefer_related_applications": false,
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#f4f5f7",
+  "theme_color": "#d32029",
+  "categories": ["health", "medical", "lifestyle"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,2289 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>உயிர்காக்கும் இரத்தம் தானம்</title>
+
+ <!-- ===== Security: Content Security Policy =====
+     script/style: self + inline (single-file app needs inline).
+     Fonts allowed only from Google Fonts; images self/data; no framing; connect self. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://apis.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebasedatabase.app https://securetoken.googleapis.com https://identitytoolkit.googleapis.com wss://*.firebasedatabase.app; frame-src https://*.firebaseapp.com https://www.google.com https://accounts.google.com https://apis.google.com; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+
+<!-- ===== PWA ===== -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#d32029">
+<meta name="description" content="இரத்த தான ஆப் — டோனர்கள் மற்றும் ரிசீவர்களை பாதுகாப்பாக இணைக்கும் தமிழ் தளம்.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="இரத்த தானம்">
+<link rel="apple-touch-icon" href="icons.png">
+<!-- ===== /PWA ===== -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#d32029;
+    --red-dark:#a1121a;
+    --red-soft:#fff1f1;
+    --ink:#1c1c1e;
+    --muted:#6b7280;
+    --line:#e6e6ea;
+    --bg:#f4f5f7;
+    --white:#ffffff;
+    --green:#1a9e57;
+    --err:#d32029;
+    --focus:#1a73e8;
+    --shadow:0 8px 30px rgba(0,0,0,.10);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    font-family:'Noto Sans Tamil',system-ui,sans-serif;
+   
+    color:var(--ink);
+    display:flex;justify-content:center;align-items:center;
+    min-height:100vh;padding:16px;
+  }
+  /* Visible keyboard focus for a11y (only for keyboard users) */
+  :focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:8px;}
+  /* Skip visual outline on mouse click but keep for keyboard */
+  button:focus:not(:focus-visible),
+  [role="button"]:focus:not(:focus-visible),
+  a:focus:not(:focus-visible){outline:none;}
+
+/* மொபைல் வியூ (பொதுவானது) */
+.viewport {
+    width: 100%;
+    min-height: 100vh;
+    overflow: hidden;
+    margin: 0 auto;
+}
+
+/* லேப்டாப் வியூ */
+@media screen and (min-width: 768px) {
+    .viewport {
+        max-width: 1000px; /* லேப்டாப்பில் ஆப் பெரியதாகத் தெரிய */
+        margin: 0 auto;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1); /* அழகான நிழல் தரும் */
+    }
+}
+ 
+.viewport {
+    width: 100%;
+    max-width: none;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+}
+
+.screen {
+    position: absolute;
+    top: 0;left:0;
+    width: 100%;
+    height:100%;
+    display: none;
+    flex-direction: column;
+    padding: 20px;
+    background: var(--bg); overflow-y:auto;
+}
+  .screen.active{display: flex;}
+  .screen.left{transform:translateX(-30%);}
+  /* Respect reduced-motion preference */
+  @media (prefers-reduced-motion: reduce){
+    .screen,.modal,.modal-overlay,.toast,.big-btn,.foot-btn,.act-btn,.primary-btn,.ghost-btn,.slider,.slider::before{transition:none !important;}
+  }
+
+  /* App bar */
+  .appbar{
+    display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--red);color:#fff;
+    position:sticky;top:0;z-index:5;box-shadow:0 2px 10px rgba(0,0,0,.15);
+  }
+  .appbar .back{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.18);
+    display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;flex-shrink:0;
+    border:none;color:#fff;font-family:inherit;padding:0;}
+  .appbar .back:active{background:rgba(255,255,255,.32);}
+  .appbar h1{font-size:17px;font-weight:700;flex:1;}
+  .appbar .gear{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.18);
+    display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;
+    border:none;color:#fff;font-family:inherit;padding:0;}
+  .appbar .gear:active{background:rgba(255,255,255,.32);}
+
+  .body{padding:20px 18px 30px;flex:1;}
+.body{padding:20px 18px 30px;flex:1;}
+  /* ---------- HOME ---------- */
+  #home{background:#fff;}
+.home-hero {
+    background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('bg.png');
+    background-size: cover;          /* இது இமேஜை முழு ஸ்கிரீனுக்கும் விரிக்கும் */
+    background-position: center;     /* இமேஜை மையப்படுத்தும் */
+    background-repeat: no-repeat;
+    width: 100%;
+    min-height: 300px;              /* தேவைக்கேற்ப உயரத்தைக் கூட்டிக்கொள்ளுங்கள் */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+ 
+  .home-hero::before{content:"";position:absolute;width:230px;height:230px;border-radius:50%;
+    background:rgba(255,255,255,.08);top:-90px;right:-70px;}
+  .home-hero::after{content:"";position:absolute;width:160px;height:160px;border-radius:50%;
+    background:rgba(255,255,255,.07);bottom:-70px;left:-50px;}
+  .drop{font-size:58px;margin-bottom:10px;position:relative;z-index:1;}
+  
+.slogan {
+    font-size: 26px; font-weight: 800; line-height: 1.35; position: relative; 
+    z-index: 1; 
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9); 
+    color: #fff;
+}
+
+.sub-slogan {
+    font-size: 15px; 
+    opacity: 0.9; 
+    margin-top: 8px; 
+    position: relative; 
+    z-index: 1; 
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9); 
+    color: #fff;
+}
+ 
+
+  .home-actions{flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:32px 26px;}
+  .big-btn{
+    border:none;border-radius:20px;padding:26px 20px;font-family:inherit;font-size:20px;font-weight:700;
+    cursor:pointer;display:flex;align-items:center;gap:16px;text-align:left;box-shadow:var(--shadow);
+    transition:transform .12s,box-shadow .12s;width:100%;max-width: 400px;margin: 10px auto;
+  }
+  .big-btn:active{transform:scale(.97);}
+  .big-btn .ic{font-size:34px;width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .big-btn small{display:block;font-size:12.5px;font-weight:500;opacity:.85;margin-top:3px;}
+  .btn-receiver{background:var(--red);color:#fff;}
+  .btn-receiver .ic{background:rgba(255,255,255,.2);}
+  .btn-donor{background:#fff;color:var(--red);border:2px solid var(--red);}
+  .btn-donor .ic{background:var(--red-soft);}
+
+  .home-footer{display:flex;gap:12px;padding:0 26px 34px;}
+  .foot-btn{
+    flex:1;border-radius:14px;padding:16px 10px;font-family:inherit;font-size:14px;font-weight:600;
+    cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;background:#fff;color:var(--ink);
+    border:1.5px solid var(--line);transition:transform .12s;
+  }
+  .foot-btn:active{transform:scale(.96);}
+  .foot-btn .fi{font-size:24px;}
+
+  /* ---------- Forms ---------- */
+  .card{background:#fff;border-radius:18px;padding:20px 18px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:16px;}
+  .card h2{font-size:16px;font-weight:700;margin-bottom:4px;color:var(--ink);}
+  .card p.hint{font-size:12.5px;color:var(--muted);margin-bottom:16px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:7px;color:#374151;}
+  .field input, .field select {
+    width: 100%; padding: 14px 14px;border: 1.5px solid var(--line);border-radius:12px;font-family:inherit;
+    font-size:15px;background:#fbfbfc;outline:none;transition: border .15s, background .15s;color:var(--ink);
+  }
+  .field input:focus,.field select:focus{border-color:var(--red);background:#fff;}
+  .field input[aria-invalid="true"]{border-color:var(--err);background:#fff6f6;}
+  .field .with-icon{position:relative;}
+  .field .with-icon .pre{position:absolute;left:12px;top:14px;font-size:16px;color:var(--muted);pointer-events:none;}
+  .field .with-icon input{padding-left:40px;}
+  /* Inline field error message */
+  .field-err{display:none;font-size:12px;color:var(--err);margin-top:6px;font-weight:600;}
+  .field-err.show{display:block;}
+  /* Password strength meter */
+  .pw-meter{height:6px;border-radius:4px;background:#eceef1;margin-top:8px;overflow:hidden;}
+  .pw-meter i{display:block;height:100%;width:0;border-radius:4px;transition:width .25s,background .25s;}
+  .pw-hint{font-size:11.5px;margin-top:5px;color:var(--muted);font-weight:600;}
+
+  .check-row{display:flex;align-items:flex-start;gap:11px;margin-bottom:12px;cursor:pointer;}
+  .check-row input{width:20px;height:20px;margin-top:2px;accent-color:var(--red);flex-shrink:0;}
+  .check-row span{font-size:12.7px;color:#4b5563;line-height:1.5;}
+  .check-row .lnk{color:var(--red);font-weight:600;text-decoration:underline;background:none;border:none;font-family:inherit;font-size:12.7px;cursor:pointer;padding:0;}
+
+  .primary-btn{
+    width:100%;border:none;border-radius:14px;padding:16px;background:var(--red);color:#fff;
+    font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(211,32,41,.28);
+    transition:transform .12s,opacity .15s;margin-top:4px;
+  }
+  .primary-btn:active{transform:scale(.98);}
+  .primary-btn:disabled{opacity:.55;cursor:progress;box-shadow:none;}
+  .primary-btn.loading{position:relative;color:transparent;}
+  .primary-btn.loading::after{content:"";position:absolute;top:50%;left:50%;width:20px;height:20px;
+    margin:-10px 0 0 -10px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;
+    animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .ghost-btn{
+    width:100%;border:1.5px solid var(--red);border-radius:14px;padding:15px;background:#fff;color:var(--red);
+    font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:transform .12s;
+  }
+  .ghost-btn:active{transform:scale(.98);}
+
+  .divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--muted);font-size:12px;}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line);}
+
+  /* Donor cards */
+  .search-bar{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:16px;}
+  .search-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+  .donor-card{
+    background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.05);
+    border-left:5px solid var(--red);
+  }
+  .donor-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .donor-avatar{width:48px;height:48px;border-radius:50%;background:var(--red-soft);color:var(--red);
+    display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex-shrink:0;}
+  .donor-info{flex:1;min-width:0;}
+  .donor-info .nm{font-size:15.5px;font-weight:700;word-break:break-word;}
+  .donor-info .loc{font-size:12.5px;color:var(--muted);margin-top:2px;word-break:break-word;}
+  .blood-tag{background:var(--red);color:#fff;font-size:15px;font-weight:800;padding:8px 12px;border-radius:12px;flex-shrink:0;}
+  .phone-hidden{font-size:13px;color:var(--muted);background:#f3f4f6;border-radius:10px;padding:9px 12px;
+    display:flex;align-items:center;gap:8px;margin-bottom:12px;letter-spacing:2px;}
+  .donor-actions{display:flex;flex-direction:column;gap:10px;}
+  .act-btn{border:none;border-radius:12px;padding:13px;font-family:inherit;font-size:14.5px;font-weight:700;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s,opacity .2s;}
+  .act-btn:active{transform:scale(.98);}
+  .msg-btn{background:#e8f5ee;color:var(--green);border:1.5px solid #bde5cd;}
+  .msg-btn.sent{background:var(--green);color:#fff;border-color:var(--green);}
+  .call-btn{background:#f3f4f6;color:#9ca3af;border:1.5px solid var(--line);cursor:not-allowed;}
+  .call-btn.enabled{background:var(--green);color:#fff;border-color:var(--green);cursor:pointer;box-shadow:0 4px 12px rgba(26,158,87,.3);}
+  .locknote{font-size:11px;color:var(--muted);text-align:center;margin-top:-2px;}
+
+  /* Toggle */
+  .toggle-card{background:#fff;border-radius:18px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.05);
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .toggle-card .tt{font-size:15px;font-weight:700;}
+  .toggle-card .ts{font-size:12.5px;color:var(--muted);margin-top:3px;}
+  .switch{position:relative;width:58px;height:32px;flex-shrink:0;}
+  .switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:2;}
+  .slider{position:absolute;inset:0;background:#cbd0d8;border-radius:32px;transition:.28s;cursor:pointer;}
+  .slider::before{content:"";position:absolute;width:26px;height:26px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.28s;box-shadow:0 2px 5px rgba(0,0,0,.25);}
+  .switch input:checked + .slider{background:var(--green);}
+  .switch input:checked + .slider::before{transform:translateX(26px);}
+  .switch input:focus-visible + .slider{outline:3px solid var(--focus);outline-offset:2px;}
+
+  .status-banner{border-radius:14px;padding:14px 16px;font-size:13.5px;font-weight:600;margin-bottom:16px;text-align:center;}
+  .status-on{background:#e8f5ee;color:var(--green);}
+  .status-off{background:#f3f4f6;color:var(--muted);}
+
+  /* list item */
+  .list-item{background:#fff;border-radius:14px;padding:15px 16px;display:flex;align-items:center;gap:13px;
+    margin-bottom:11px;box-shadow:0 2px 10px rgba(0,0,0,.04);cursor:pointer;transition:transform .12s;
+    width:100%;border:none;font-family:inherit;text-align:left;color:var(--ink);}
+  .list-item:active{transform:scale(.98);}
+  .list-item .li-ic{width:40px;height:40px;border-radius:11px;background:var(--red-soft);color:var(--red);
+    display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+  .list-item .li-tx{flex:1;}
+  .list-item .li-tx .a{font-size:14.5px;font-weight:600;}
+  .list-item .li-tx .b{font-size:12px;color:var(--muted);margin-top:2px;}
+  .list-item .arr{color:#c4c8cf;font-size:18px;}
+  .list-item.danger .li-ic{background:#fdeaea;color:var(--red);}
+  .list-item.danger .li-tx .a{color:var(--red);}
+
+  .section-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:6px 4px 12px;}
+
+  /* Toast */
+  .toast{position:absolute;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:#1c1c1e;color:#fff;padding:13px 20px;border-radius:30px;font-size:13.5px;font-weight:500;
+    box-shadow:0 8px 24px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.3s;z-index:50;max-width:88%;text-align:center;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.err{background:#7a1015;}
+
+  /* Modal */
+  .modal-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;
+    justify-content:center;opacity:0;pointer-events:none;transition:.28s;z-index:60;}
+  .modal-overlay.show{opacity:1;pointer-events:auto;}
+  .modal{background:#fff;width:100%;border-radius:24px 24px 0 0;padding:24px 20px 30px;transform:translateY(100%);
+    transition:transform .32s cubic-bezier(.4,0,.2,1);max-height:80%;overflow-y:auto;}
+  .modal-overlay.show .modal{transform:translateY(0);}
+  .modal .grab{width:44px;height:5px;background:var(--line);border-radius:3px;margin:0 auto 18px;}
+  /* ---- UPI donation modal ---- */
+  .donate-lead{font-size:14px;color:var(--muted);line-height:1.55;margin:2px 0 14px;}
+  .donate-payee{background:var(--red-soft);border:1px solid #f3caca;border-radius:12px;padding:11px 13px;margin-bottom:14px;}
+  .dp-label{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:5px;}
+  .dp-vpa{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .dp-id{font-weight:700;color:var(--red-dark);font-size:15px;word-break:break-all;}
+  .dp-copy{flex:none;border:1px solid var(--red);background:#fff;color:var(--red);font-weight:600;
+    border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;}
+  .dp-copy:active{transform:scale(.96);}
+  .amt-wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+  .amt-chip{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:11px 4px;
+    font-weight:700;font-size:15px;color:var(--ink);cursor:pointer;}
+  .amt-chip.sel{border-color:var(--red);background:var(--red-soft);color:var(--red-dark);}
+  .amt-chip:active{transform:scale(.97);}
+  .donate-note{font-size:12.5px;color:var(--muted);line-height:1.5;margin:2px 0 14px;}
+  .desktop-vpa{background:var(--red-soft);border:1px solid #f3caca;border-radius:12px;
+    padding:16px 14px;text-align:center;margin-bottom:16px;}
+  .dp-id-big{font-weight:800;color:var(--red-dark);font-size:19px;word-break:break-all;margin-top:4px;}
+  .dp-amt{margin-top:8px;font-weight:600;color:var(--ink);}
+  .modal h3{font-size:18px;font-weight:700;margin-bottom:6px;}
+  .modal p{font-size:13.5px;color:var(--muted);line-height:1.6;margin-bottom:12px;}
+  .install-guide{margin:4px 0 16px;}
+  .install-plat{font-size:14px;font-weight:700;color:var(--ink);margin:2px 0 12px;}
+  .install-step{display:flex;align-items:flex-start;gap:12px;margin:0 0 12px;}
+  .install-step-num{flex:0 0 26px;width:26px;height:26px;border-radius:50%;background:var(--red);
+    color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .install-step-txt{font-size:14px;color:#374151;line-height:1.55;padding-top:2px;}
+  .modal .policy-body{max-height:280px;overflow-y:auto;font-size:13px;color:#4b5563;line-height:1.7;margin-bottom:18px;}
+  .modal .policy-body h4{color:var(--ink);font-size:14px;margin:14px 0 6px;}
+  .modal-btns{display:flex;gap:12px;}
+  .modal-btns button{flex:1;}
+  .g-account{display:flex;align-items:center;gap:12px;padding:13px 6px;border-bottom:1px solid var(--line);
+    cursor:pointer;width:100%;background:none;border-left:none;border-right:none;border-top:none;font-family:inherit;text-align:left;}
+  .g-account .ga-av{width:36px;height:36px;border-radius:50%;background:var(--red);color:#fff;display:flex;
+    align-items:center;justify-content:center;font-weight:700;font-size:16px;flex:0 0 auto;}
+  .g-account .ga-em{font-size:14.5px;color:#3c4043;word-break:break-all;}
+
+  .otp-box{display:flex;gap:10px;justify-content:center;margin:6px 0 4px;}
+  .otp-box input{width:46px;height:54px;text-align:center;font-size:22px;font-weight:700;border:1.5px solid var(--line);
+    border-radius:12px;background:#fbfbfc;outline:none;}
+  .otp-box input:focus{border-color:var(--red);background:#fff;}
+  .otp-note{font-size:12px;color:var(--muted);text-align:center;margin-top:10px;}
+  .otp-note b{color:var(--red);}
+  /* ---- Disclaimers / alerts (maintenance + OTP daily limit) ---- */
+  .maint-note{display:flex;align-items:center;gap:8px;justify-content:center;
+    background:#fff8e1;border:1.5px solid #ffe082;border-radius:12px;
+    padding:9px 12px;margin:0 0 10px;font-size:12.5px;color:#8a6d00;font-weight:600;text-align:center;}
+  .otp-limit-note{display:flex;align-items:flex-start;gap:8px;
+    background:#e7f1ff;border:1.5px solid #b6d4fe;border-radius:12px;
+    padding:10px 12px;margin:0 0 12px;font-size:12.5px;color:#0b4a8f;line-height:1.5;}
+  .otp-limit-note b{color:#083d78;}
+  .otp-count{display:inline-block;margin-top:4px;font-weight:700;color:#0b4a8f;}
+  .otp-count.low{color:var(--red);}
+
+  /* ---- Google verify ---- */
+  .gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;
+    border:1.5px solid var(--line);border-radius:12px;background:#fff;font-family:inherit;font-size:15px;
+    font-weight:600;color:#3c4043;cursor:pointer;transition:.15s;}
+  .gbtn:hover{background:#f7f8fa;box-shadow:0 1px 4px rgba(0,0,0,.12);}
+  .gbtn svg{width:20px;height:20px;flex:0 0 auto;}
+  .verified-row{display:flex;align-items:center;gap:8px;background:#e8f5e9;border:1.5px solid #a5d6a7;
+    border-radius:12px;padding:11px 13px;margin:2px 0 4px;}
+  .verified-row .vic{width:22px;height:22px;border-radius:50%;background:#2e7d32;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:13px;flex:0 0 auto;}
+  .verified-row .vtxt{font-size:14px;font-weight:600;color:#1b5e20;word-break:break-all;line-height:1.3;}
+  .verified-row .vtag{font-size:11px;color:#2e7d32;font-weight:700;}
+  .locked-note{font-size:11.5px;color:var(--muted);margin:6px 2px 0;}
+  input:read-only{background:#f1f2f4;color:#5f6368;cursor:not-allowed;}
+  /* ---- Auth method chooser (3 methods) ---- */
+  .method-picker{display:flex;flex-direction:column;gap:10px;margin-bottom:6px;}
+  .method-btn{display:flex;align-items:center;gap:12px;width:100%;padding:14px 15px;border:1.5px solid var(--line);
+    border-radius:14px;background:#fff;cursor:pointer;text-align:left;transition:border-color .15s,box-shadow .15s;}
+  .method-btn:hover{border-color:var(--red);box-shadow:0 2px 10px rgba(211,32,41,.08);}
+  .method-btn:focus-visible{outline:3px solid rgba(211,32,41,.4);outline-offset:2px;}
+  .method-btn .mic{width:40px;height:40px;border-radius:11px;background:var(--red-soft);display:flex;
+    align-items:center;justify-content:center;font-size:20px;flex:0 0 auto;}
+  .method-btn .mtx{display:flex;flex-direction:column;gap:2px;}
+  .method-btn .mtx .mt{font-size:14.5px;font-weight:700;color:var(--ink);}
+  .method-btn .mtx .ms{font-size:11.5px;color:var(--muted);}
+  .method-btn .marr{margin-left:auto;color:var(--muted);font-size:20px;}
+  .method-back{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--red);
+    font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;padding:4px 0;margin-bottom:10px;}
+  .method-back:focus-visible{outline:2px solid rgba(211,32,41,.4);outline-offset:2px;border-radius:6px;}
+  .method-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:12px;}
+  .hidden{display:none !important;}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+
+  .empty{text-align:center;padding:40px 20px;color:var(--muted);}
+  .empty .ei{font-size:46px;margin-bottom:12px;opacity:.5;}
+  .empty p{font-size:14px;}
+
+  .badge-mine{display:inline-block;background:var(--red-soft);color:var(--red);font-size:11px;font-weight:700;
+    padding:3px 9px;border-radius:20px;margin-left:8px;}
+
+  /* offline banner */
+  .offline-bar{position:fixed;top:0;left:0;right:0;width:100%;background:#7a1015;color:#fff;font-size:12px;
+    font-weight:600;text-align:center;padding:10px;z-index:9999;
+               display: none;
+
+  ::-webkit-scrollbar{width:0;}
+  }
+</style>
+</head>
+<body>
+  <!-- Offline indicator (aria-live so screen readers announce it) -->
+  <div class="offline-bar" id="offlineBar" role="status" aria-live="polite">⚠️ இணையம் இல்லை — ஆஃப்லைன் நிலையில் இயங்குகிறது</div>
+
+  <div class="viewport" id="viewport">
+
+    <!-- ============ HOME ============ -->
+    <section class="screen active" id="home" aria-label="முகப்பு">
+      <div class="home-hero">
+        <div class="drop" aria-hidden="true">🩸</div>
+        <h1 class="slogan">உயிர்காக்கும்<br>இரத்தம் தானம்</h1>
+        <p class="sub-slogan">ஒரு துளி இரத்தம் — ஒரு உயிர்</p>
+      </div>
+      <div class="home-actions">
+        <button class="big-btn btn-receiver" type="button" onclick="go('receiverReg')" aria-label="ரிசீவர் — இரத்தம் தேவைப்படுபவர், டோனர்களை தேடுங்கள்">
+          <span class="ic" aria-hidden="true">🔍</span>
+          <span>ரிசீவர்<small>இரத்தம் தேவைப்படுபவர் — டோனர்களை தேடுங்கள்</small></span>
+        </button>
+        <button class="big-btn btn-donor" type="button" onclick="go('donorLogin')" aria-label="டோனர் — இரத்த தானம் செய்பவர், உள்நுழையுங்கள்">
+          <span class="ic" aria-hidden="true">❤️</span>
+          <span>டோனர்<small>இரத்த தானம் செய்பவர் — உள்நுழையுங்கள்</small></span>
+        </button>
+      </div>
+      <p class="maint-note" role="note">
+        <span aria-hidden="true">🛠️</span> இந்த டொனேஷன் ஆப் பராமரிப்புக்கு (maintenance) மட்டுமே
+      </p>
+      <div class="home-footer">
+       <button class="foot-btn" type="button" id="donateBtn">
+    <span class="fi" aria-hidden="true">❤️</span> டொனேஷன்
+</button>
+
+<button class="foot-btn" type="button" id="installBtn">
+    <span class="fi" aria-hidden="true">⬇️</span> டவுன்லோட்
+</button>
+      </div>
+    </section>
+
+    <!-- ============ RECEIVER REGISTRATION ============ -->
+    <section class="screen" id="receiverReg" aria-label="ரிசீவர் பதிவு">
+      <div class="appbar">
+        <button class="back" type="button" onclick="back('home')" aria-label="பின் செல்">‹</button>
+        <h1>ரிசீவர் பதிவு</h1>
+      </div>
+      <div class="body">
+        <div class="card">
+          <h2>உங்கள் விவரங்கள்</h2>
+          <p class="hint">டோனர்களை தொடர்பு கொள்ள உங்கள் விவரங்களை பதிவு செய்யுங்கள்.</p>
+          <form onsubmit="event.preventDefault();submitReceiver(this);" novalidate>
+            <div class="field">
+              <label for="rcvName">பெயர்</label>
+              <div class="with-icon"><span class="pre" aria-hidden="true">👤</span><input id="rcvName" name="name" autocomplete="name" placeholder="உங்கள் முழு பெயர்" aria-describedby="rcvName-err"></div>
+              <p class="field-err" id="rcvName-err" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="rcvMob">மொபைல் நம்பர்</label>
+              <div class="with-icon"><span class="pre" aria-hidden="true">📱</span><input id="rcvMob" name="mobile" type="tel" inputmode="tel" maxlength="14" autocomplete="tel" placeholder="+919012345678" aria-describedby="rcvMob-err"></div>
+              <p class="field-err" id="rcvMob-err" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="rcvWa">வாட்ஸ்அப் நம்பர்</label>
+              <div class="with-icon"><span class="pre" aria-hidden="true">💬</span><input id="rcvWa" name="whatsapp" type="tel" inputmode="numeric" maxlength="10" placeholder="வாட்ஸ்அப் நம்பர்" aria-describedby="rcvWa-err"></div>
+              <p class="field-err" id="rcvWa-err" role="alert"></p>
+            </div>
+            <label class="check-row">
+              <input type="checkbox" id="rcvTc">
+              <span>நான் <button type="button" class="lnk" onclick="openPolicy('terms',event)">விதிமுறைகள் &amp; நிபந்தனைகளை</button> படித்து ஏற்றுக்கொள்கிறேன்.</span>
+            </label>
+            <label class="check-row">
+              <input type="checkbox" id="rcvPp">
+              <span>நான் <button type="button" class="lnk" onclick="openPolicy('privacy',event)">தனியுரிமைக் கொள்கையை</button> ஏற்றுக்கொள்கிறேன்.</span>
+            </label>
+            <button class="primary-btn" type="submit" id="rcvSubmit">பதிவு செய்து தொடரவும் →</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RECEIVER SEARCH ============ -->
+    <section class="screen" id="receiverSearch" aria-label="டோனர்களை தேடுங்கள்">
+      <div class="appbar">
+        <button class="back" type="button" onclick="back('home')" aria-label="பின் செல்">‹</button>
+        <h1>டோனர்களை தேடுங்கள்</h1>
+        <button class="gear" type="button" onclick="go('receiverSettings')" aria-label="செட்டிங்ஸ்">⚙️</button>
+      </div>
+      <div class="body">
+        <div class="search-bar">
+          <div class="search-grid">
+            <div class="field" style="margin:0;">
+              <label for="fltBlood">பிளட் குரூப்</label>
+              <select id="fltBlood">
+                <option value="">எல்லாம்</option>
+                <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                <option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
+              </select>
+            </div>
+            <div class="field" style="margin:0;">
+              <label for="fltLoc">பகுதி / ஊர்</label>
+              <div class="with-icon"><span class="pre" aria-hidden="true">📍</span><input id="fltLoc" placeholder="ஊர் / லொகேஷன்" style="padding-left:36px;"></div>
+            </div>
+          </div>
+          <button class="primary-btn" type="button" onclick="searchDonors()">🔍 தேடு</button>
+        </div>
+        <div id="donorResults" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- ============ RECEIVER SETTINGS ============ -->
+    <section class="screen" id="receiverSettings" aria-label="ரிசீவர் செட்டிங்ஸ்">
+      <div class="appbar">
+        <button class="back" type="button" onclick="back('receiverSearch')" aria-label="பின் செல்">‹</button>
+        <h1>செட்டிங்ஸ்</h1>
+      </div>
+      <div class="body">
+        <div class="section-title">பொது</div>
+        <button class="list-item" type="button" onclick="openPolicy('privacy')">
+          <span class="li-ic" aria-hidden="true">🔒</span>
+          <span class="li-tx"><span class="a">தனியுரிமைக் கொள்கை</span><span class="b">Privacy Policy</span></span>
+          <span class="arr" aria-hidden="true">›</span>
+        </button>
+        <button class="list-item" type="button" onclick="openPolicy('terms')">
+          <span class="li-ic" aria-hidden="true">📄</span>
+          <span class="li-tx"><span class="a">விதிமுறைகள் &amp; நிபந்தனைகள்</span><span class="b">Terms &amp; Conditions</span></span>
+          <span class="arr" aria-hidden="true">›</span>
+        </button>
+        <button class="list-item" type="button" onclick="showToast('ஆப் பதிப்பு 1.0.0')">
+          <span class="li-ic" aria-hidden="true">ℹ️</span>
+          <span class="li-tx"><span class="a">ஆப் பற்றி</span><span class="b">Version 1.0.0</span></span>
+          <span class="arr" aria-hidden="true">›</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ DONOR LOGIN ============ -->
+    <section class="screen" id="donorLogin" aria-label="டோனர் உள்நுழைவு">
+      <div class="appbar">
+        <button class="back" type="button" onclick="back('home')" aria-label="பின் செல்">‹</button>
+        <h1>டோனர் உள்நுழைவு</h1>
+      </div>
+      <div class="body">
+        <div class="card">
+          <h2>உள்நுழைவு</h2>
+
+          <!-- Step 0: method chooser -->
+          <div id="lgMethod">
+            <p class="hint" style="margin-bottom:14px;">உங்கள் விருப்பப்படி ஒரு முறையைத் தேர்ந்தெடுத்து உள்நுழையுங்கள்.</p>
+            <div class="method-picker">
+              <button class="method-btn" type="button" onclick="chooseMethod('login','google')" aria-label="Google auto verification மூலம் உள்நுழைய">
+                <span class="mic" aria-hidden="true">🔵</span>
+                <span class="mtx"><span class="mt">Google auto verification</span><span class="ms">Google கணக்கை தேர்வு செய்து auto verify</span></span>
+                <span class="marr" aria-hidden="true">›</span>
+              </button>
+              <button class="method-btn" type="button" onclick="chooseMethod('login','gmail')" aria-label="Gmail ID மற்றும் பாஸ்வேர்ட் மூலம் உள்நுழைய">
+                <span class="mic" aria-hidden="true">✉️</span>
+                <span class="mtx"><span class="mt">Gmail ID + பாஸ்வேர்ட்</span><span class="ms">உங்கள் Gmail ID + பாஸ்வேர்ட் போட்டு உள்நுழைய</span></span>
+                <span class="marr" aria-hidden="true">›</span>
+              </button>
+              <button class="method-btn" type="button" onclick="chooseMethod('login','mobile')" aria-label="மொபைல் நம்பர் மற்றும் OTP மூலம் உள்நுழைய">
+                <span class="mic" aria-hidden="true">📱</span>
+                <span class="mtx"><span class="mt">மொபைல் நம்பர் + OTP</span><span class="ms">மொபைல் நம்பர் மூலம் OTP போட்டு உள்நுழைய</span></span>
+                <span class="marr" aria-hidden="true">›</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 1: Google verify (method=google) -->
+          <div id="lgGoogle" class="hidden">
+            <button class="method-back" type="button" onclick="resetMethod('login')" aria-label="முறைத் தேர்வுக்கு திரும்பு">‹ முறை மாற்று</button>
+            <div id="lgStep1" class="field">
+              <button class="gbtn" type="button" onclick="verifyGoogle('login')">
+                <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                Google மூலம் Verify செய்யவும்
+              </button>
+            </div>
+            <div id="lgStep2" class="hidden">
+              <div class="field">
+                <label>Verify ஆன Google / Gmail ID</label>
+                <div class="verified-row">
+                  <span class="vic" aria-hidden="true">✓</span>
+                  <div><span class="vtxt" id="lgEmailShow"></span><br><span class="vtag">Google-ஆல் சரிபார்க்கப்பட்டது</span></div>
+                </div>
+                <input id="lgEmail" type="email" readonly class="hidden" aria-hidden="true" tabindex="-1">
+                <p class="locked-note">🔒 இந்த Gmail ID மாற்ற முடியாது (Google-ஆல் verify ஆனது)</p>
+              </div>
+              <button class="primary-btn" type="button" id="lgGoogleSubmit" onclick="finishGoogle('login')">உள்நுழைய →</button>
+            </div>
+          </div>
+
+          <!-- method=gmail : Gmail ID + password -->
+          <div id="lgGmail" class="hidden">
+            <button class="method-back" type="button" onclick="resetMethod('login')" aria-label="முறைத் தேர்வுக்கு திரும்பு">‹ முறை மாற்று</button>
+            <p class="method-title">✉️ Gmail ID + பாஸ்வேர்ட்</p>
+            <div class="field">
+              <label for="lgGmailEmail">Gmail ID</label>
+              <div class="with-icon"><span class="pre" aria-hidden="true">✉️</span><input id="lgGmailEmail" type="email" autocomplete="email" placeholder="you@gmail.com" aria-describedby="lgGmailEmail-err"></div>
+              <p class="field-err" id="lgGmailEmail-err" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="lgGmailPass">பாஸ்வேர்ட்</label>
+              <div class="with-icon"><span class="pre" aria-hidden="true">🔑</span><input id="lgGmailPass" type="password" autocomplete="current-password" placeholder="பாஸ்வேர்ட்" aria-describedby="lgGmailPass-err"></div>
+              <p class="field-err" id="lgGmailPass-err" role="alert"></p>
+            </div>
+            <button class="primary-btn" type="button" id="lgGmailSubmit" onclick="loginGmail('login')">உள்நுழைய →</button>
+          </div>
+
+          <!-- method=mobile : Mobile + OTP -->
+          <div id="lgMobile" class="hidden">
+            <button class="method-back" type="button" onclick="resetMethod('login')" aria-label="முறைத் தேர்வுக்கு திரும்பு">‹ முறை மாற்று</button>
+            <p class="method-title">📱 மொபைல் நம்பர் + OTP</p>
+            <div class="field">
+              <label for="lgMobileNum">மொபைல் நம்பர்</label>
+              <div class="with-icon"><span class="pre" aria-hidden="true">📱</span><input id="lgMobileNum" type="tel" inputmode="tel" maxlength="14" autocomplete="tel" placeholder="எ.கா-+919012345678" aria-describedby="lgMobileNum-err"></div>
+              <p class="field-err" id="lgMobileNum-err" role="alert"></p>
+            </div>
+            <div class="otp-limit-note"><span aria-hidden="true">ℹ️</span><span>பாதுகாப்பிற்காக ஒரு நாளைக்கு அதிகபட்சம் <b>10 OTP</b> மட்டுமே. <span id="lgOtpCounter"></span></span></div>
+            <button class="primary-btn" type="button" id="lgMobileSubmit" onclick="loginMobile('login')">OTP அனுப்பு →</button>
+          </div>
+        </div>
+        <div class="divider">புதிதாக உள்நுழைபவரா?</div>
+        <div class="card" style="text-align:center;">
+          <p class="hint" style="margin-bottom:14px;">உங்களுக்கு கணக்கு இல்லையா? புதிய டோனர் கணக்கை உருவாக்குங்கள்.</p>
+          <button class="ghost-btn" type="button" onclick="go('donorRegister')">Register — புதிய கணக்கு</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ DONOR REGISTER ============ -->
+    <section class="screen" id="donorRegister" aria-label="புதிய கணக்கு உருவாக்கம்">
+      <div class="appbar">
+        <button class="back" type="button" onclick="back('donorLogin')" aria-label="பின் செல்">‹</button>
+        <h1>புதிய கணக்கு உருவாக்கம்</h1>
+      </div>
+      <div class="body">
+        <div class="card">
+          <h2>கணக்கு உருவாக்கம்</h2>
+
+          <!-- கட்டாய consent: விதிமுறைகள் + தனியுரிமை -->
+          <div class="consent-box" id="rgConsentBox">
+            <label class="consent-row" for="rgTc"><input type="checkbox" id="rgTc" onchange="clearFieldError('rgConsent')">
+              <span>நான் <button class="lnk" type="button" onclick="openPolicy('terms',event)">விதிமுறைகள் &amp; நிபந்தனைகளை</button> ஏற்கிறேன்.</span></label>
+            <label class="consent-row" for="rgPp"><input type="checkbox" id="rgPp" onchange="clearFieldError('rgConsent')">
+              <span>நான் <button class="lnk" type="button" onclick="openPolicy('privacy',event)">தனியுரிமைக் கொள்கையை</button> ஏற்கிறேன்.</span></label>
+            <p class="field-err" id="rgConsent-err" role="alert"></p>
+          </div>
+
+          <!-- Step 0: method chooser (register) -->
+          <div id="rgMethod">
+            <p class="hint" style="margin-bottom:14px;">உங்கள் விருப்பப்படி ஒரு முறையைத் தேர்ந்தெடுத்துப் பதிவு செய்யுங்கள்.</p>
+            <div class="method-picker">
+              <button class="method-btn" type="button" onclick="chooseMethod('register','google')" aria-label="Google auto verification மூலம் பதிவு">
+                <span class="mic" aria-hidden="true">🔵</span>
+                <span class="mtx"><span class="mt">Google auto verification</span><span class="ms">Google கணக்கை தேர்வு செய்து auto verify</span></span>
+                <span class="marr" aria-hidden="true">›</span>
+              </button>
+              <button class="method-btn" type="button" onclick="chooseMethod('register','gmail')" aria-label="Gmail ID மற்றும் பாஸ்வேர்ட் மூலம் பதிவு">
+                <span class="mic" aria-hidden="true">✉️</span>
+                <span class="mtx"><span class="mt">Gmail ID + பாஸ்வேர்ட்</span><span class="ms">உங்கள் Gmail ID + புதிய பாஸ்வேர்ட் மூலம் பதிவு</span></span>
+                <span class="marr" aria-hidden="true">›</span>
+              </button>
+              <button class="method-btn" type="button" onclick="chooseMethod('register','mobile')" aria-label="மொபைல் நம்பர் மற்றும் OTP மூலம் பதிவு">
+                <span class="mic" aria-hidden="true">📱</span>
+                <span class="mtx"><span class="mt">மொபைல் நம்பர் + OTP</span><span class="ms">மொபைல் நம்பர் மூலம் OTP போட்டு பதிவு</span></span>
+                <span class="marr" aria-hidden="true">›</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- method=google : Google verify -->
+          <div id="rgGoogle" class="hidden">
+            <button class="method-back" type="button" onclick="resetMethod('register')" aria-label="முறைத் தேர்வுக்கு திரும்பு">‹ முறை மாற்று</button>
+            <div id="rgStep1" class="field">
+              <button class="gbtn" type="button" onclick="verifyGoogle('register')">
+                <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                Google மூலம் Verify செய்யவும்
+              </button>
+            </div>
+            <div id="rgStep2" class="hidden">
+              <div class="field">
+                <label>Verify ஆன Google / Gmail ID</label>
+                <div class="verified-row">
+                  <span class="vic" aria-hidden="true">✓</span>
+                  <div><span class="vtxt" id="rgEmailShow"></span><br><span class="vtag">Google-ஆல் சரிபார்க்கப்பட்டது</span></div>
+                </div>
+                <input id="rgEmail" type="email" readonly class="hidden" aria-hidden="true" tabindex="-1">
+                <p class="locked-note">🔒 இந்த Gmail ID மாற்ற முடியாது (Google-ஆல் verify ஆனது)</p>
+              </div>
+              <button class="primary-btn" type="button" id="rgGoogleSubmit" onclick="finishGoogle('register')">பதிவு →</button>
+            </div>
+          </div>
+
+          <!-- method=gmail : Gmail ID + password -->
+          <div id="rgGmail" class="hidden">
+            <button class="method-back" type="button" onclick="resetMethod('register')" aria-label="முறைத் தேர்வுக்கு திரும்பு">‹ முறை மாற்று</button>
+            <p class="method-title">✉️ Gmail ID + பாஸ்வேர்ட்</p>
+            <div class="field">
+              <label for="rgGmailEmail">Gmail ID</label>
+              <div class="with-icon"><span class="pre" aria-hidden="true">✉️</span><input id="rgGmailEmail" type="email" autocomplete="email" placeholder="you@gmail.com" aria-describedby="rgGmailEmail-err"></div>
+              <p class="field-err" id="rgGmailEmail-err" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="rgGmailPass">பாஸ்வேர்ட்</label>
+              <div class="with-icon"><span class="pre" aria-hidden="true">🔑</span><input id="rgGmailPass" type="password" autocomplete="new-password" placeholder="புதிய பாஸ்வேர்ட் (குறைந்தது 6 எழுத்து)" aria-describedby="rgGmailPass-err rgGmailPass-hint" oninput="updatePwMeter(this.value)"></div>
+              <div class="pw-meter" aria-hidden="true"><i id="pwBar"></i></div>
+              <p class="pw-hint" id="rgGmailPass-hint">வலிமையான பாஸ்வேர்ட்: எழுத்து + எண் + சிறப்பு குறியீடு</p>
+              <p class="field-err" id="rgGmailPass-err" role="alert"></p>
+            </div>
+            <button class="primary-btn" type="button" id="rgGmailSubmit" onclick="registerGmail()">பதிவு →</button>
+          </div>
+
+          <!-- method=mobile : Mobile + OTP -->
+          <div id="rgMobile" class="hidden">
+            <button class="method-back" type="button" onclick="resetMethod('register')" aria-label="முறைத் தேர்வுக்கு திரும்பு">‹ முறை மாற்று</button>
+            <p class="method-title">📱 மொபைல் நம்பர் + OTP</p>
+            <div class="field">
+              <label for="rgMobileNum">மொபைல் நம்பர்</label>
+              <div class="with-icon"><span class="pre" aria-hidden="true">📱</span><input id="rgMobileNum" type="tel" inputmode="tel" maxlength="14" autocomplete="tel" placeholder="+919012345678" aria-describedby="rgMobileNum-err"></div>
+              <p class="field-err" id="rgMobileNum-err" role="alert"></p>
+            </div>
+            <div class="otp-limit-note"><span aria-hidden="true">ℹ️</span><span>பாதுகாப்பிற்காக ஒரு நாளைக்கு அதிகபட்சம் <b>10 OTP</b> மட்டுமே. <span id="rgOtpCounter"></span></span></div>
+            <button class="primary-btn" type="button" id="rgMobileSubmit" onclick="registerMobile()">OTP அனுப்பு →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ DONOR DASHBOARD ============ -->
+    <section class="screen" id="donorDash" aria-label="டோனர் டாஷ்போர்டு">
+      <div class="appbar">
+        <button class="back" type="button" onclick="back('home')" aria-label="பின் செல்">‹</button>
+        <h1>டோனர் டாஷ்போர்டு</h1>
+        <button class="gear" type="button" onclick="go('donorSettings')" aria-label="செட்டிங்ஸ்">⚙️</button>
+      </div>
+      <div class="body">
+        <div id="donorStatusBanner" class="status-banner status-off" role="status" aria-live="polite">நீங்கள் தற்போது செயலற்ற நிலையில் உள்ளீர்கள்</div>
+
+        <div class="toggle-card">
+          <div>
+            <div class="tt">ஆக்டிவ் நிலை</div>
+            <div class="ts" id="toggleDesc">On செய்தால் ரிசீவர்கள் உங்களை தேட முடியும்</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="activeToggle" onchange="toggleActive(this)" aria-label="ஆக்டிவ் நிலை On/Off" aria-describedby="toggleDesc">
+            <span class="slider" aria-hidden="true"></span>
+          </label>
+        </div>
+
+        <div class="section-title">டோனர் பதிவு சேர்</div>
+        <div class="card">
+          <form onsubmit="event.preventDefault();addDonorRecord(this);" novalidate>
+            <div class="field">
+              <label for="dNm">பெயர் (Name)</label>
+              <div class="with-icon"><span class="pre" aria-hidden="true">👤</span><input id="dNm" autocomplete="name" placeholder="உங்கள் பெயர்" aria-describedby="dNm-err"></div>
+              <p class="field-err" id="dNm-err" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="dLoc">ஊர் (Location)</label>
+              <div class="with-icon"><span class="pre" aria-hidden="true">📍</span><input id="dLoc" placeholder="உங்கள் ஊர் / பகுதி" aria-describedby="dLoc-err"></div>
+              <p class="field-err" id="dLoc-err" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="dBlood">பிளட் குரூப்</label>
+              <select id="dBlood" aria-describedby="dBlood-err">
+                <option value="">தேர்ந்தெடுக்கவும்</option>
+                <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                <option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
+              </select>
+              <p class="field-err" id="dBlood-err" role="alert"></p>
+            </div>
+            <div class="field">
+              <label for="dMob">மொபைல் நம்பர்</label>
+              <div class="with-icon"><span class="pre" aria-hidden="true">📱</span><input id="dMob" type="tel" inputmode="tel" maxlength="14" autocomplete="tel" placeholder="+919012345678" aria-describedby="dMob-err"></div>
+              <p class="field-err" id="dMob-err" role="alert"></p>
+            </div>
+            <button class="primary-btn" type="submit">＋ பதிவை சேர்</button>
+          </form>
+        </div>
+
+        <div class="section-title">என் பதிவுகள்</div>
+        <div id="myDonorRecords" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- ============ DONOR SETTINGS ============ -->
+    <section class="screen" id="donorSettings" aria-label="டோனர் செட்டிங்ஸ்">
+      <div class="appbar">
+        <button class="back" type="button" onclick="back('donorDash')" aria-label="பின் செல்">‹</button>
+        <h1>செட்டிங்ஸ்</h1>
+      </div>
+      <div class="body">
+        <div class="section-title">கணக்கு</div>
+        <button class="list-item" type="button" onclick="openMobileUpdate()">
+          <span class="li-ic" aria-hidden="true">📱</span>
+          <span class="li-tx"><span class="a">மொபைல் நம்பர் அப்டேட்</span><span class="b" id="curMobLabel">தற்போதைய நம்பர் மாற்று</span></span>
+          <span class="arr" aria-hidden="true">›</span>
+        </button>
+        <button class="list-item" type="button" onclick="openPolicy('privacy')">
+          <span class="li-ic" aria-hidden="true">🔒</span>
+          <span class="li-tx"><span class="a">தனியுரிமைக் கொள்கை</span><span class="b">Privacy Policy</span></span>
+          <span class="arr" aria-hidden="true">›</span>
+        </button>
+        <div class="section-title" style="margin-top:22px;">ஆபத்து மண்டலம்</div>
+        <button class="list-item danger" type="button" onclick="openDelete()">
+          <span class="li-ic" aria-hidden="true">🗑️</span>
+          <span class="li-tx"><span class="a">கணக்கை நீக்கு</span><span class="b">Account Delete — நிரந்தரமாக நீக்கப்படும்</span></span>
+          <span class="arr" aria-hidden="true">›</span>
+        </button>
+      </div>
+    </section>
+
+  </div><!-- /viewport -->
+
+  <div class="toast" id="toast" role="status" aria-live="assertive"></div>
+
+  <!-- ===== Modal ===== -->
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="விவரம்" onclick="event.stopPropagation()"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+\u003Cspan class=\"arr\" aria-hidden=\"true\">›\u003C/span>     FIREBASE — MODULAR (ESM v10.12.2) SDK, imported from gstatic CDN.
+     Uses the real modular API (initializeApp, getAuth, getDatabase,
+     signInWithPopup, createUserWithEmailAndPassword, signInWithPhoneNumber,
+     RecaptchaVerifier, ref/set/push/serverTimestamp …).
+     A thin compat-shaped adapter (window.firebase / fbAuth / fbDB) is
+     exposed so the rest of the single-file app keeps working unchanged.
+     ========================================================== -->
+ <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInWithPhoneNumber, GoogleAuthProvider, RecaptchaVerifier } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getDatabase, ref, set, push, get, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCgek5jmAeF_HBe1YD-mO8eLXdAL6q-wfU",
+    authDomain: "uyir-blood-app.firebaseapp.com",
+    databaseURL: "https://uyir-blood-app-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "uyir-blood-app",
+    storageBucket: "uyir-blood-app.firebasestorage.app",
+    messagingSenderId: "271995911666",
+    appId: "1:271995911666:web:946194f480992018f2bf6b"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  window.fbAuth = getAuth(app);
+  window.fbDB = getDatabase(app);
+  window.fbReady = true;
+  window.GoogleAuthProvider = GoogleAuthProvider;
+  window.RecaptchaVerifier = RecaptchaVerifier;
+
+  console.log("Firebase Modular SDK initialized!");
+  document.dispatchEvent(new Event('firebase-ready'));
+</script>
+ 
+<script>
+/* ============================================================
+   FIREBASE GLOBALS (populated by the ESM module above, async).
+   These vars mirror window.* so the legacy code reads them directly.
+   ============================================================ */
+'use strict';
+var fbReady = (typeof window.fbReady !== 'undefined') ? window.fbReady : false;
+var fbAuth  = window.fbAuth || null;
+var fbDB    = window.fbDB   || null;
+var fbUser  = window.fbUser || null;
+
+/* When the async module finishes, refresh the mirrored globals so any
+   auth/db call made afterwards uses the live Firebase instances. */
+document.addEventListener('firebase-ready', function () {
+  fbReady = !!window.fbReady;
+  fbAuth  = window.fbAuth || null;
+  fbDB    = window.fbDB   || null;
+  fbUser  = window.fbUser || null;
+});
+
+/* ---- DB helpers: write registration / records / events ---- */
+function dbWrite(path, data) {
+  if (!window.fbReady || !window.fbDB) return Promise.resolve(false);
+  try {
+    var ref = window.fbDB.ref(path).push();
+    return ref.set(Object.assign({ ts: window.firebase.database.ServerValue.TIMESTAMP }, data))
+      .then(function () { return true; })
+      .catch(function (err) { console.warn('DB write failed:', err && err.message); return false; });
+  } catch (e) { return Promise.resolve(false); }
+}
+function dbWriteUser(subtree, uid, data) {
+  if (!window.fbReady || !window.fbDB || !uid) return Promise.resolve(false);
+  try {
+    return window.fbDB.ref(subtree + '/' + uid).set(
+      Object.assign({ ts: window.firebase.database.ServerValue.TIMESTAMP }, data))
+      .then(function () { return true; })
+      .catch(function (err) { console.warn('DB write failed:', err && err.message); return false; });
+  } catch (e) { return Promise.resolve(false); }
+}
+'use strict';
+/* =================================================================
+   இரத்த தான ஆப் (v8) — Firebase MODULAR (ESM) + Security hardened build
+   Single-file HTML/CSS/JS demo prototype (no backend).
+   Key hardening: XSS-safe DOM building, CSP, input validation,
+   password strength, localStorage persistence (non-sensitive only),
+   full a11y (aria + keyboard), inline errors, loading states.
+   ================================================================= */
+
+/* ---------- Security helper: HTML escape (XSS prevention) ---------- */
+/* Any user-supplied text that touches the DOM is escaped through this. */
+function escapeHtml(str){
+  return String(str == null ? '' : str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+/* Small DOM helpers (build nodes safely instead of innerHTML string concat) */
+function el(tag, cls, txt){
+  var n = document.createElement(tag);
+  if(cls) n.className = cls;
+  if(txt != null) n.textContent = txt;   /* textContent = auto-escaped */
+  return n;
+}
+function scr(id){ return document.getElementById(id); }
+
+/* ---------- Input validators ---------- */
+var RE_DIGITS = /\D+/g;
+function onlyDigits(v){ return String(v || '').replace(RE_DIGITS, ''); }
+function isMobile(v){ return /^[6-9]\d{9}$/.test(v); }   /* Indian 10-digit mobile */
+
+/* Password strength: 0=weak 1=fair 2=good 3=strong */
+function pwScore(pw){
+  var s = 0;
+  if(pw.length >= 8) s++;
+  if(/[A-Za-z]/.test(pw) && /\d/.test(pw)) s++;
+  if(/[^A-Za-z0-9]/.test(pw)) s++;
+  if(pw.length >= 12) s = Math.min(3, s + 1);
+  return Math.min(3, s);
+}
+function updatePwMeter(pw){
+  var bar = scr('pwBar');
+  var pct = [12, 40, 70, 100][pwScore(pw)];
+  var col = ['#d32029','#e8871e','#f2c200','#1a9e57'][pwScore(pw)];
+  if(!pw){ pct = 0; }
+  bar.style.width = pct + '%';
+  bar.style.background = col;
+}
+
+/* ---------- Inline field errors (better UX than only toast) ---------- */
+function setFieldError(inputId, msg){
+  var input = scr(inputId);
+  var errEl = scr(inputId + '-err');
+  if(input) input.setAttribute('aria-invalid', 'true');
+  if(errEl){ errEl.textContent = msg; errEl.classList.add('show'); }
+}
+function clearFieldError(inputId){
+  var input = scr(inputId);
+  var errEl = scr(inputId + '-err');
+  if(input) input.removeAttribute('aria-invalid');
+  if(errEl){ errEl.textContent = ''; errEl.classList.remove('show'); }
+}
+function clearErrors(ids){ ids.forEach(clearFieldError); }
+
+/* ---------- Loading state on buttons ---------- */
+function setLoading(btnId, on){
+  var b = scr(btnId);
+  if(!b) return;
+  if(on){ b.classList.add('loading'); b.disabled = true; }
+  else { b.classList.remove('loading'); b.disabled = false; }
+}
+
+/* ================= PWA: Service Worker + Install ================= */
+var deferredPrompt = null;      /* beforeinstallprompt event (Chrome/Edge) */
+var pendingInstall = false;     /* user clicked before prompt arrived -> auto-fire when ready */
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js')
+      .then(function(reg){ console.log('SW registered:', reg.scope); })
+      .catch(function(err){ console.log('SW register failed:', err); });
+  });
+}
+
+/* Chrome/Edge fire this when the PWA becomes installable. If the user already
+   tapped download before it fired, install automatically now (one-click UX). */
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  deferredPrompt = e;
+  if(pendingInstall){
+    pendingInstall = false;
+    triggerInstallPrompt();
+  }
+});
+
+window.addEventListener('appinstalled', function(){
+  deferredPrompt = null;
+  pendingInstall = false;
+  showToast('✅ ஆப் வெற்றிகரமாக install ஆனது!');
+});
+
+/* iOS ஆ? (iPhone/iPad — iPadOS 13+ desktop UA workaround உட்பட) */
+function isIOSDevice(){
+  var ua = navigator.userAgent || '';
+  var iOS = /iPhone|iPad|iPod/i.test(ua);
+  var iPadOS = (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return iOS || iPadOS;
+}
+function isInStandalone(){
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true;
+}
+
+/* ஒரு வரிசை படிமுறையை (எண் + உரை) modal-ல் காட்ட உதவும் helper */
+function stepRow(num, text){
+  var row = el('div','install-step');
+  row.appendChild(el('span','install-step-num', String(num)));
+  row.appendChild(el('span','install-step-txt', text));
+  return row;
+}
+
+/* platform-specific manual install வழிமுறையை modal-ல் காட்டு (crash-safe) */
+ window.showInstallGuide = function () {
+  var m = scr('modal');
+  m.textContent = '';
+  m.appendChild(el('div','grab'));
+  m.appendChild(el('h3', null, '⬇️ ஆப்பாக install செய்யுங்கள்'));
+
+  if(reason){ m.appendChild(el('p','donate-lead', reason)); }
+
+  var wrap = el('div','install-guide');
+  if(isIOSDevice()){
+    /* iOS Safari-ல் beforeinstallprompt இல்லை → Share → Add to Home Screen */
+    wrap.appendChild(el('p','install-plat', '📱 iPhone / iPad (Safari):'));
+    wrap.appendChild(stepRow(1, 'கீழே உள்ள Share பட்டனை (⬆️ சதுரம் + அம்பு) தட்டவும்.'));
+    wrap.appendChild(stepRow(2, 'கீழே ஸ்க்ரோல் செய்து "Add to Home Screen" (முகப்புத் திரையில் சேர்) தேர்வு செய்யவும்.'));
+    wrap.appendChild(stepRow(3, 'மேலே வலதில் "Add" (சேர்) தட்டவும் — ஆப் icon முகப்புத் திரையில் வரும்.'));
+  } else {
+    /* Android / Desktop Chrome fallback */
+    wrap.appendChild(el('p','install-plat', '🤖 Android (Chrome) / 💻 Desktop:'));
+    wrap.appendChild(stepRow(1, 'உலாவியின் Menu (⋮ — மேல் வலது மூலை) தட்டவும்.'));
+    wrap.appendChild(stepRow(2, '"Install app" அல்லது "Add to Home screen" (முகப்புத் திரையில் சேர்) தேர்வு செய்யவும்.'));
+    wrap.appendChild(stepRow(3, '"Install" / "Add" உறுதிசெய்யவும் — ஆப் தனி ஆப்பாகத் திறக்கும்.'));
+  }
+  m.appendChild(wrap);
+
+  var ok = el('button','primary-btn','சரி, புரிந்தது');
+  ok.type = 'button';
+  ok.addEventListener('click', function(){ closeModal(); });
+  m.appendChild(ok);
+  openModal();
+}
+
+/* Actually show the native install prompt (deferredPrompt must exist). */
+window.triggerInstallPrompt = function () {
+  if(!deferredPrompt){ return false; }
+  try{
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(choice){
+      showToast(choice && choice.outcome === 'accepted'
+        ? '⬇️ ஆப் install ஆகிறது…'
+        : 'Install ரத்து செய்யப்பட்டது — Menu (⋮) மூலமும் install செய்யலாம்');
+      deferredPrompt = null;
+    }).catch(function(){ deferredPrompt = null; showInstallGuide(null); });
+  }catch(err){
+    deferredPrompt = null;
+    showInstallGuide('தானியங்கி install கிடைக்கவில்லை — கீழ்க்கண்ட வழிமுறையைப் பின்பற்றவும்:');
+    return false;
+  }
+  return true;
+}
+
+/* Download button → trigger PWA install (or platform-specific guidance) */
+window.installPWA = function () {
+  /* ஏற்கனவே install ஆகியிருந்தால் */
+  if(isInStandalone()){
+    showToast('✅ ஆப் ஏற்கனவே install ஆகிவிட்டது!');
+    return;
+  }
+  /* Android/Chrome: beforeinstallprompt capture ஆகியிருந்தால் → நேரடி prompt() */
+  if(deferredPrompt){
+    triggerInstallPrompt();
+    return;
+  }
+  /* iOS Safari: beforeinstallprompt ஆதரவு இல்லை → Share guide */
+  if(isIOSDevice()){
+    showInstallGuide(null);
+    return;
+  }
+  /* Android/Desktop but prompt not fired YET → queue it: auto-install the
+     moment beforeinstallprompt arrives. Show guide only if it never comes. */
+  pendingInstall = true;
+  showToast('⏳ Install தயாராகிறது…');
+  setTimeout(function(){
+    if(pendingInstall){
+      pendingInstall = false;
+      showInstallGuide('இந்த உலாவியில் தானியங்கி install கிடைக்கவில்லை. கைமுறையாக install செய்ய:');
+    }
+  }, 2500);
+}
+/* ================= /PWA ================= */
+
+/* ---------- Offline handling ---------- */
+function updateOnline(){
+  var bar = document.getElementById('offlineBar');
+  if(navigator.onLine){ bar.classList.remove('show'); }
+  else { bar.classList.add('show'); }
+}
+window.addEventListener('online', updateOnline);
+window.addEventListener('offline', updateOnline);
+
+/* ---------- Navigation (screen stack) ---------- */
+var stack = ['home'];
+/* புதிய go(id) பங்க்ஷன் */
+window.go = function (id) {
+    var cur = stack[stack.length - 1];
+    if (cur === id) return;
+    
+    var curEl = scr(cur);
+    var nextEl = scr(id);
+    
+    curEl.classList.remove('active');
+    nextEl.classList.add('active');
+    
+    stack.push(id);
+    nextEl.scrollTop = 0;
+    
+    if(id === 'donorLogin' || id === 'donorRegister') resetAuthScreens();
+    focusFirst(nextEl);
+} 
+ 
+function back(fallback) {
+    if (stack.length > 1) {
+        var cur = stack.pop();
+        var prev = stack[stack.length - 1] || fallback;
+        
+        scr(cur).classList.remove('active');
+        scr(prev).classList.add('active');
+    } else {
+        go(fallback);
+    }
+}
+ 
+
+ 
+/* Move keyboard focus to the screen heading for a11y after navigation */
+function focusFirst(screenEl){
+  var h = screenEl.querySelector('h1');
+  if(h){ h.setAttribute('tabindex','-1'); setTimeout(function(){ h.focus(); }, 320); }
+}
+
+/* ---------- Toast (aria-live) ---------- */
+var toastTimer;
+function showToast(msg, isErr){
+  var t = scr('toast');
+  t.textContent = msg;
+  t.classList.toggle('err', !!isErr);
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+}
+/* ---------- localStorage persistence (non-sensitive only) ----------
+   We persist ONLY the donor's own public records + active flag + last
+   verified email. We NEVER store passwords or OTP. */
+var LS_KEY = 'bda_v4_state';
+function saveState(){
+  try{
+    var data = {
+      myRecords: myRecords,          /* public donor listings */
+      active: scr('activeToggle') ? scr('activeToggle').checked : false,
+      lastEmail: verifiedEmail.register || verifiedEmail.login || ''
+      /* NOTE: passwords / OTP intentionally excluded */
+    };
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  }catch(e){ /* storage may be disabled — fail silently */ }
+}
+function loadState(){
+  try{
+    var raw = localStorage.getItem(LS_KEY);
+    if(!raw) return;
+    var data = JSON.parse(raw);
+    if(Array.isArray(data.myRecords)) myRecords = data.myRecords;
+    if(data.active && scr('activeToggle')){
+      scr('activeToggle').checked = true;
+      toggleActive(scr('activeToggle'), true);
+    }
+  }catch(e){ /* corrupt data — ignore */ }
+}
+
+/* ---------- Receiver flow ---------- */
+function submitReceiver(){
+  clearErrors(['rcvName','rcvMob','rcvWa']);
+  var nm  = scr('rcvName').value.trim();
+  var mob = onlyDigits(scr('rcvMob').value);
+  var wa  = onlyDigits(scr('rcvWa').value);
+  var ok = true;
+  if(!nm){ setFieldError('rcvName','பெயரை உள்ளிடவும்'); ok = false; }
+  if (mob.length < 10 || mob.length > 13) { 
+    setFieldError('rcvMob', 'சரியான மொபைல் எண்ணை உள்ளிடவும்'); 
+    ok = false; 
+}
+  if(!isMobile(wa)){ setFieldError('rcvWa','சரியான வாட்ஸ்அப் நம்பர் தேவை'); ok = false; }
+  if(!scr('rcvTc').checked){ showToast('விதிமுறைகளை ஏற்க வேண்டும்', true); ok = false; }
+  if(ok && !scr('rcvPp').checked){ showToast('தனியுரிமைக் கொள்கையை ஏற்க வேண்டும்', true); ok = false; }
+  if(!ok) return;
+
+  setLoading('rcvSubmit', true);
+  /* Persist receiver registration to Realtime Database */
+  dbWrite('receivers', { name: nm, mobile: '+91' + mob, whatsapp: '+91' + wa });
+  setTimeout(function(){
+    setLoading('rcvSubmit', false);
+    showToast('பதிவு வெற்றி! டோனர்களை தேடுங்கள் ✅');
+    searchDonors();
+    go('receiverSearch');
+  }, 650);
+}
+var DONORS = [];
+var messaged = {};   /* which donor keys have been messaged (enables Call) */
+
+/* Search donors — reads LIVE data from Realtime Database (/records),
+ * filters to active donors, then renders. Falls back to demo DONORS
+ * when Firebase is unavailable or the DB has no records yet. */
+function searchDonors(){
+  var b   = scr('fltBlood').value.trim();
+  var loc = scr('fltLoc').value.trim().toLowerCase();
+
+  function filterAndRender(list){
+    var out = list.filter(function(d){
+      var okB = !b || d.blood === b;
+      var okL = !loc || (d.loc || '').toLowerCase().indexOf(loc) !== -1;
+      return okB && okL;
+    });
+    renderDonorResults(out);
+  }
+
+  if( !window.fbReady || !window.fbDB){ filterAndRender(DONORS); return; }
+
+  var box = scr('donorResults');
+  box.textContent = '';
+  box.appendChild(el('p','hint','🔄 டோனர்கள் ஏற்றப்படுகிறது…'));
+
+  window.fbDB.ref('records').once('value')
+    .then(function(snap){
+      var list = [];
+      snap.forEach(function(child){
+        var v = child.val() || {};
+        if(v.active === false) return;   /* only show available donors */
+        list.push({ name: v.name || '', loc: v.loc || '', blood: v.blood || '',
+                    mob: onlyDigits(v.mobile || '') });
+      });
+      /* If DB empty, show demo donors so the screen is never blank */
+      filterAndRender(list.length ? list : DONORS);
+    })
+    .catch(function(err){
+      console.warn('records read failed:', err && err.message);
+      filterAndRender(DONORS);   /* fallback */
+    });
+}
+
+/* Build donor result cards with SAFE DOM APIs (no innerHTML string concat). */
+function renderDonorResults(out){
+  var box = scr('donorResults');
+  box.textContent = '';   /* clear */
+
+  if(out.length === 0){
+    var em = el('div','empty');
+    em.appendChild(el('div','ei','🔍'));
+    em.appendChild(el('p', null, 'இந்த பகுதி/குரூப்-க்கு டோனர்கள் இல்லை. வேறு தேடல் முயற்சிக்கவும்.'));
+    box.appendChild(em);
+    return;
+  }
+
+  out.forEach(function(d){
+    var key = d.mob;                       /* internal key, not shown */
+    var card = el('div','donor-card');
+
+    var top = el('div','donor-top');
+    top.appendChild(el('div','donor-avatar', d.name.charAt(0)));
+    var info = el('div','donor-info');
+    info.appendChild(el('div','nm', d.name));           /* textContent-escaped */
+    info.appendChild(el('div','loc', '📍 ' + d.loc));
+    top.appendChild(info);
+    top.appendChild(el('div','blood-tag', d.blood));
+    card.appendChild(top);
+
+    card.appendChild(el('div','phone-hidden','🔒 மொபைல் நம்பர் மறைக்கப்பட்டுள்ளது'));
+
+    var actions = el('div','donor-actions');
+    var msgBtn = el('button','act-btn msg-btn','💬 மெசேஜ் அனுப்பு');
+    msgBtn.type = 'button';
+    msgBtn.id = 'msg-' + key;
+    msgBtn.setAttribute('aria-label', d.name + '-க்கு மெசேஜ் அனுப்பு');
+    msgBtn.addEventListener('click', function(){ sendMessage(key, d.name); });
+
+    var callBtn = el('button','act-btn call-btn','📞 கால் செய்');
+    callBtn.type = 'button';
+    callBtn.id = 'call-' + key;
+    callBtn.setAttribute('aria-label', d.name + '-க்கு கால் செய்');
+    callBtn.setAttribute('aria-disabled','true');
+    callBtn.addEventListener('click', function(){ makeCall(key, d.name); });
+
+    var note = el('div','locknote','🔒 மெசேஜ் அனுப்பிய பிறகே கால் பட்டன் செயல்படும்');
+    note.id = 'note-' + key;
+
+    actions.appendChild(msgBtn);
+    actions.appendChild(callBtn);
+    actions.appendChild(note);
+    card.appendChild(actions);
+    box.appendChild(card);
+  });
+}
+
+/* Message must be sent before Call becomes active (per requirement). */
+function sendMessage(key, name){
+  if(messaged[key]){ showToast('மெசேஜ் ஏற்கனவே அனுப்பப்பட்டது'); return; }
+  messaged[key] = true;
+  var mbtn = scr('msg-' + key);
+  mbtn.classList.add('sent');
+  mbtn.textContent = '✅ மெசேஜ் அனுப்பப்பட்டது';
+  var cbtn = scr('call-' + key);
+  cbtn.classList.add('enabled');
+  cbtn.setAttribute('aria-disabled','false');
+  var note = scr('note-' + key);
+  if(note) note.textContent = '✅ இப்போது கால் பட்டன் செயல்படுகிறது';
+  showToast(name + '-க்கு மெசேஜ் அனுப்பப்பட்டது 💬');
+}
+function makeCall(key, name){
+  if(!messaged[key]){ showToast('முதலில் மெசேஜ் அனுப்பவும்', true); return; }
+  showToast('📞 ' + name + '-க்கு ஆஃப்லைன் கால் (Google Contact) இணைக்கிறது…');
+}
+
+/* ================= Donor Auth: 3 methods ================= *
+ * Each screen (login / register) offers three self-chosen paths:
+ *   1) google  — auto verification via Google account picker
+ *   2) gmail   — Gmail ID + password
+ *   3) mobile  — mobile number + OTP
+ * For REGISTER, the Privacy Policy + Terms checkboxes are mandatory
+ * and are gated BEFORE any method can be chosen.                        */
+var verifiedEmail   = { login:'', register:'' };   /* google-verified email */
+
+/* ---------- OTP daily limit (max 10 per day) + counter ----------
+ * Stored in localStorage keyed by today's date. Non-sensitive. */
+var OTP_DAILY_MAX = 10;
+var OTP_KEY = 'bda_otp_count';
+function todayKey(){ var d = new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function getOtpCount(){
+  try{
+    var raw = JSON.parse(localStorage.getItem(OTP_KEY) || '{}');
+    return (raw.date === todayKey()) ? (raw.count || 0) : 0;
+  }catch(e){ return 0; }
+}
+function bumpOtpCount(){
+  var c = getOtpCount() + 1;
+  try{ localStorage.setItem(OTP_KEY, JSON.stringify({ date: todayKey(), count: c })); }catch(e){}
+  updateOtpCounterUI();
+  return c;
+}
+function otpRemaining(){ return Math.max(0, OTP_DAILY_MAX - getOtpCount()); }
+function updateOtpCounterUI(){
+  ['lgOtpCounter','rgOtpCounter'].forEach(function(id){
+    var el2 = scr(id); if(el2) el2.textContent = 'இன்று மீதம்: ' + otpRemaining() + '/' + OTP_DAILY_MAX + ' OTP';
+  });
+}
+window.addEventListener('load', () => {
+    // இம்போர்ட் எல்லாம் லோட் ஆன பிறகுதான் இது இயங்கும்
+    if (window.getAuth) {
+        const auth = window.getAuth(); 
+        window.auth = auth;
+        
+        window.recaptchaVerifier = new window.RecaptchaVerifier(window.auth, 'recaptcha-container', {
+            'size': 'invisible',
+            'callback': (response) => {
+                console.log("reCAPTCHA வெற்றி");
+            }
+        });
+   } else {
+    // Firebase லோட் ஆகும் வரை காத்திருந்துவிட்டு பிறகு முயற்சி செய்யும்
+    console.log("Firebase இன்னும் லோட் ஆகவில்லை, காத்திருக்கிறோம்...");
+    setTimeout(function() {
+        // மீண்டும் ஒருமுறை முயற்சி செய்யும்
+        if (window.fbReady) {
+            // ஒருவேளை லோட் ஆகிவிட்டால், மீண்டும் Recaptcha செட் செய்யவும்
+            window.recaptchaVerifier = new window.RecaptchaVerifier(window.fbAuth, 'recaptcha-container', {
+                'size': 'invisible'
+            });
+        }
+   }, 1000); // 1386
+} 
+
+function sendOTP() {
+    // 1. Firebase லோட் ஆகிவிட்டதா என்று சோதிக்கவும்
+    if (typeof window.fbReady !== 'undefined' && window.fbReady) {
+        
+        var phoneInput = document.getElementById('phone').value;
+        var phoneNumber = phoneInput.startsWith('+') ? phoneInput : '+91' + phoneInput;
+        var appVerifier = window.recaptchaVerifier;
+
+        // 2. Firebase Modular முறையில் OTP அனுப்புதல்
+        window.fbAuth.signInWithPhoneNumber(phoneNumber, appVerifier)
+            .then(function (confirmationResult) {
+                window.confirmationResult = confirmationResult;
+                alert("OTP அனுப்பப்பட்டது!");
+            })
+            .catch(function (error) {
+                console.error("பிழை:", error);
+                
+                // பழைய கோடில் இருந்த அந்த முக்கிய எரர் சோதனைகள் இங்கே!
+                if (error.code === 'auth/operation-not-allowed') {
+                    alert("இந்த நாட்டில் SMS அனுமதிக்கப்படவில்லை, Firebase Console-ல் SMS region policy-ஐ சரிபார்க்கவும்.");
+                } else if (error.code === 'auth/invalid-phone-number') {
+                    alert("மொபைல் எண் தவறு!");
+                } else if (error.code === 'auth/too-many-requests') {
+                    alert("அதிக முயற்சிகள் - சிறிது நேரம் கழித்து முயலவும்.");
+                } else {
+                    alert("பிழை: " + error.message);
+                }
+            });
+
+    } else {
+        // 3. Firebase லோட் ஆகவில்லை என்றால், 1 வினாடி காத்திருந்து தானாகவே மீண்டும் முயற்சிக்கும்
+        console.warn("Firebase இன்னும் தயாராகவில்லை, காத்திருக்கிறோம்...");
+        setTimeout(sendOTP, 1000); 
+    }
+}
+
+/* ---- helper: prefix + panel ids for a given mode ---- */
+function pfx(mode){ return (mode === 'login') ? 'lg' : 'rg'; }
+
+/* ---- Register consent gate: both boxes must be ticked ---- */
+function consentOk(){
+  return scr('rgTc').checked && scr('rgPp').checked;
+}
+function requireConsent(){
+  if(consentOk()) return true;
+  setFieldError('rgConsent','தொடர விதிமுறைகள் & தனியுரிமைக் கொள்கை இரண்டையும் ஏற்க வேண்டும்');
+  showToast('விதிமுறைகள் & தனியுரிமைக் கொள்கையை ஏற்கவும்', true);
+  return false;
+}
+
+/* ---- Choose one of the 3 methods ---- */
+function chooseMethod(mode, method){
+  /* register: block method selection until consent is given */
+  if(mode === 'register' && !requireConsent()) return;
+  var p = pfx(mode);
+  scr(p + 'Method').classList.add('hidden');
+  ['Google','Gmail','Mobile'].forEach(function(m){ scr(p + m).classList.add('hidden'); });
+  var panel = method.charAt(0).toUpperCase() + method.slice(1);   /* Google/Gmail/Mobile */
+  scr(p + panel).classList.remove('hidden');
+  focusFirst(scr(p + panel));
+}
+
+/* ---- Back to the method chooser ---- */
+function resetMethod(mode){
+  var p = pfx(mode);
+  ['Google','Gmail','Mobile'].forEach(function(m){ scr(p + m).classList.add('hidden'); });
+  scr(p + 'Method').classList.remove('hidden');
+  /* reset google sub-steps + clear all method inputs/errors */
+  verifiedEmail[mode] = '';
+  if(scr(p + 'Step1')) scr(p + 'Step1').classList.remove('hidden');
+  if(scr(p + 'Step2')) scr(p + 'Step2').classList.add('hidden');
+  clearAuthInputs(mode);
+}
+function clearAuthInputs(mode){
+  var p = pfx(mode);
+  ['Email','GmailEmail','GmailPass','MobileNum'].forEach(function(f){
+    var e = scr(p + f); if(e) e.value = '';
+  });
+  clearErrors([p + 'GmailEmail', p + 'GmailPass', p + 'MobileNum']);
+}
+
+/* Reset both login & register screens (called on navigation) */
+function resetAuthScreens(){
+  ['login','register'].forEach(resetMethod);
+  /* clear register consent so it must be re-accepted each visit */
+  if(scr('rgTc')) scr('rgTc').checked = false;
+  if(scr('rgPp')) scr('rgPp').checked = false;
+  clearErrors(['rgConsent']);
+}
+
+/* ================= Method 1: Google auto verification =================
+ * REAL Firebase Google Sign-In via signInWithPopup(GoogleAuthProvider).
+ * On success the verified Gmail auto-fills (read-only) + user saved to DB.
+ * If Firebase is unavailable, falls back to a demo account picker.       */
+function verifyGoogle(mode){
+  /* Fallback: no Firebase → demo picker (keeps app usable offline) */
+  if(!window.fbReady){ demoGooglePicker(mode); return; }
+
+  var provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  showToast('Google சாளரம் திறக்கிறது…');
+
+  window.fbAuth.signInWithPopup(provider)
+    .then(function(result){
+      var email = (result.user && result.user.email) || '';
+      /* Save/merge donor profile in Realtime Database */
+      dbWriteUser('donors', result.user.uid, {
+        email: email,
+        name: result.user.displayName || '',
+        method: 'google',
+        provider: 'google.com',
+        lastLogin: firebase.database.ServerValue.TIMESTAMP
+      });
+      dbWrite('events', { type: 'google_verify', mode: mode, email: email });
+      pickGoogle(mode, email);
+    })
+    .catch(function(err){
+      var code = err && err.code ? err.code : '';
+      if(code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request'){
+        showToast('Google verify ரத்து செய்யப்பட்டது', true);
+      } else if(code === 'auth/unauthorized-domain'){
+        showToast('இந்த டொமைன் Firebase-ல் authorize செய்யப்படவில்லை', true);
+      } else {
+        showToast('Google verify தோல்வி: ' + (err && err.message ? err.message : code), true);
+      }
+    });
+}
+/* Demo picker fallback (only when Firebase SDK is blocked/offline) */
+function demoGooglePicker(mode){
+  var m = scr('modal');
+  m.textContent = '';
+  m.appendChild(el('div','grab'));
+  m.appendChild(el('h3', null, '🔵 கணக்கை தேர்வு செய்யவும் (demo)'));
+  m.appendChild(el('p', null, 'Firebase இணைப்பு இல்லை — demo கணக்கு தேர்வு.'));
+  demoGoogleAccounts.forEach(function(em){
+    var row = el('button','g-account');
+    row.type = 'button';
+    row.appendChild(el('span','ga-av', em.charAt(0).toUpperCase()));
+    row.appendChild(el('span','ga-em', em));
+    row.addEventListener('click', function(){ pickGoogle(mode, em); });
+    m.appendChild(row);
+  });
+  openModal();
+}
+function pickGoogle(mode, email){
+  closeModal();
+  verifiedEmail[mode] = email;
+  var p = pfx(mode);
+  scr(p + 'Email').value = email;
+  scr(p + 'EmailShow').textContent = email;   /* textContent-safe (no XSS) */
+  scr(p + 'Step1').classList.add('hidden');
+  scr(p + 'Step2').classList.remove('hidden');
+  showToast('✅ ' + email + ' — Google verify வெற்றி');
+}
+/* After Google verify → finish immediately (auto verification = no extra pw/OTP) */
+function finishGoogle(mode){
+  if(!verifiedEmail[mode]){ showToast('முதலில் Google மூலம் verify செய்யுங்கள்', true); return; }
+  var p = pfx(mode);
+  setLoading(p + 'GoogleSubmit', true);
+  setTimeout(function(){
+    setLoading(p + 'GoogleSubmit', false);
+    authSuccess(mode, 'google');
+  }, 450);
+}
+
+/* ================= Method 2: Gmail ID + password ================= */
+function isGmail(v){ return /^[^\s@]+@gmail\.com$/i.test(v.trim()); }
+
+function loginGmail(mode){   /* login path — REAL Firebase signInWithEmailAndPassword */
+  clearErrors(['lgGmailEmail','lgGmailPass']);
+  var email = scr('lgGmailEmail').value.trim();
+  var pw    = scr('lgGmailPass').value;
+  var ok = true;
+  if(!isGmail(email)){ setFieldError('lgGmailEmail','சரியான Gmail ID உள்ளிடவும் (you@gmail.com)'); ok = false; }
+  if(!pw.trim()){ setFieldError('lgGmailPass','பாஸ்வேர்டை உள்ளிடவும்'); ok = false; }
+  if(!ok) return;
+
+  if(!window.fbReady){   /* offline/demo fallback */
+    setLoading('lgGmailSubmit', true);
+    setTimeout(function(){ setLoading('lgGmailSubmit', false); authSuccess('login','gmail'); }, 500);
+    return;
+  }
+  setLoading('lgGmailSubmit', true);
+  window.fbAuth.signInWithEmailAndPassword(email, pw)
+    .then(function(cred){
+      dbWriteUser('donors', cred.user.uid, { email: email, method: 'gmail',
+        lastLogin: firebase.database.ServerValue.TIMESTAMP });
+      dbWrite('events', { type: 'gmail_login', email: email });
+      setLoading('lgGmailSubmit', false);
+      authSuccess('login','gmail');
+    })
+    .catch(function(err){
+      setLoading('lgGmailSubmit', false);
+      var c = err && err.code ? err.code : '';
+      if(c === 'auth/wrong-password' || c === 'auth/invalid-credential'){
+        setFieldError('lgGmailPass','பாஸ்வேர்ட் தவறு');
+      } else if(c === 'auth/user-not-found'){
+        setFieldError('lgGmailEmail','இந்த Gmail ID பதிவு செய்யப்படவில்லை — முதலில் register செய்யுங்கள்');
+      } else if(c === 'auth/too-many-requests'){
+        showToast('அதிக முயற்சிகள் — சிறிது நேரம் கழித்து முயலவும்', true);
+      } else {
+        showToast('உள்நுழைவு தோல்வி: ' + (err && err.message ? err.message : c), true);
+      }
+    });
+}
+function registerGmail(){   /* register path — REAL createUserWithEmailAndPassword + pw strength enforced */
+  clearErrors(['rgGmailEmail','rgGmailPass']);
+  var email = scr('rgGmailEmail').value.trim();
+  var pw    = scr('rgGmailPass').value;
+  var ok = true;
+  if(!isGmail(email)){ setFieldError('rgGmailEmail','சரியான Gmail ID உள்ளிடவும் (you@gmail.com)'); ok = false; }
+  if(!pw.trim()){ setFieldError('rgGmailPass','புதிய பாஸ்வேர்டை உள்ளிடவும்'); ok = false; }
+  else if(pwScore(pw) < 1 || pw.length < 6){ setFieldError('rgGmailPass','பாஸ்வேர்ட் மிகவும் பலவீனம் (குறைந்தது 6-8 எழுத்து + எண்)'); ok = false; }
+  if(!ok) return;
+
+  if(!window.fbReady){   /* offline/demo fallback */
+    setLoading('rgGmailSubmit', true);
+    setTimeout(function(){ setLoading('rgGmailSubmit', false); authSuccess('register','gmail'); }, 500);
+    return;
+  }
+  setLoading('rgGmailSubmit', true);
+  window.fbAuth.createUserWithEmailAndPassword(email, pw)
+    .then(function(cred){
+      dbWriteUser('donors', cred.user.uid, { email: email, method: 'gmail',
+        registeredAt: firebase.database.ServerValue.TIMESTAMP });
+      dbWrite('events', { type: 'gmail_register', email: email });
+      setLoading('rgGmailSubmit', false);
+      authSuccess('register','gmail');
+    })
+    .catch(function(err){
+      setLoading('rgGmailSubmit', false);
+      var c = err && err.code ? err.code : '';
+      if(c === 'auth/email-already-in-use'){
+        setFieldError('rgGmailEmail','இந்த Gmail ID ஏற்கனவே பதிவு உள்ளது — login செய்யுங்கள்');
+      } else if(c === 'auth/weak-password'){
+        setFieldError('rgGmailPass','பாஸ்வேர்ட் மிகவும் பலவீனம் (குறைந்தது 6 எழுத்து)');
+      } else {
+        showToast('பதிவு தோல்வி: ' + (err && err.message ? err.message : c), true);
+      }
+    });
+}
+
+/* ================= Method 3: Mobile + OTP ================= */
+function loginMobile(mode){ startMobileOtp('login'); }
+function registerMobile(){ startMobileOtp('register'); }
+
+/* ============ REGISTER (combined flow used by donorRegister screen) ============
+ * Requires: Google verify done → verified Gmail + password + mobile.
+ * Step A: create the account with Email/Password (verified Gmail).
+ * Step B: send mobile OTP (Phone Auth) → on verify → dashboard.
+ * Daily OTP limit + password strength are enforced.                          */
+function startOtp(mode){
+  /* This screen is register-only (donorRegister). */
+  clearErrors(['rgPass','rgMob']);
+  if(!verifiedEmail.register){
+    showToast('முதலில் Google மூலம் verify செய்யுங்கள்', true);
+    return;
+  }
+  var email = verifiedEmail.register;
+  var pw    = scr('rgPass').value;
+  var mob   = onlyDigits(scr('rgMob').value);
+  var ok = true;
+  if(!pw.trim()){ setFieldError('rgPass','புதிய பாஸ்வேர்டை உள்ளிடவும்'); ok = false; }
+  else if(pwScore(pw) < 1 || pw.length < 6){ setFieldError('rgPass','பாஸ்வேர்ட் மிகவும் பலவீனம் (குறைந்தது 6-8 எழுத்து + எண்)'); ok = false; }
+ if (mob.length < 10 || mob.length > 13) { 
+    setFieldError('rcvMob', 'சரியான மொபைல் எண்ணை உள்ளிடவும்'); 
+    ok = false; 
+}
+  if(!ok) return;
+
+  /* Daily OTP limit */
+  if(otpRemaining() <= 0){
+    setFieldError('rgMob','இன்றைய OTP வரம்பு (10) முடிந்தது — நாளை முயலவும்');
+    showToast('இன்று OTP வரம்பு முடிந்தது (10/நாள்)', true);
+    return;
+  }
+
+  if(!window.fbReady){   /* offline/demo fallback */
+    setLoading('rgSubmit', true);
+    bumpOtpCount();
+    setTimeout(function(){ setLoading('rgSubmit', false); openOtpModal('register', mob, true); }, 500);
+    return;
+  }
+
+  setLoading('rgSubmit', true);
+  /* A) create the Email/Password account first (verified Gmail) */
+  window.fbAuth.createUserWithEmailAndPassword(email, pw)
+    .then(function(cred){
+      dbWriteUser('donors', cred.user.uid, {
+        email: email, mobile: '+91' + mob, method: 'google+password+mobile',
+        registeredAt: firebase.database.ServerValue.TIMESTAMP
+      });
+      dbWrite('events', { type: 'register', email: email, mobile: '+91' + mob });
+    })
+    .catch(function(err){
+      /* email may already exist — that's OK, continue to OTP step */
+      var c = err && err.code ? err.code : '';
+      if(c !== 'auth/email-already-in-use'){
+        console.warn('register email step:', err && err.message);
+      }
+    })
+    .then(function(){
+      /* B) send the mobile OTP */
+      var verifier = ensureRecaptcha();
+      if(!verifier){ setLoading('rgSubmit', false); bumpOtpCount(); openOtpModal('register', mob, true); return; }
+      return window.fbAuth.signInWithPhoneNumber('+91' + mob, verifier)
+        .then(function(confResult){
+          confirmationResult = confResult;
+          bumpOtpCount();
+          dbWrite('events', { type: 'otp_sent', mobile: '+91' + mob, mode: 'register' });
+          setLoading('rgSubmit', false);
+          openOtpModal('register', mob, false);
+        });
+    })
+    .catch(function(err){
+      setLoading('rgSubmit', false);
+      try{ if(recaptchaVerifier){ recaptchaVerifier.clear(); recaptchaVerifier = null; } }catch(e){}
+      var c = err && err.code ? err.code : '';
+      if(c === 'auth/too-many-requests'){ setFieldError('rgMob','அதிக முயற்சிகள் — சிறிது நேரம் கழித்து முயலவும்'); }
+      else { showToast('OTP அனுப்ப முடியவில்லை: ' + (err && err.message ? err.message : c), true); }
+    });
+}
+function startMobileOtp(mode){
+  var p = pfx(mode);
+  clearErrors([ + 'MobileNum']);
+  var mob = onlyDigits(scr(p + 'MobileNum').value);
+  if (mob.length < 10 || mob.length > 13) { 
+    setFieldError('rcvMob', 'சரியான மொபைல் எண்ணை உள்ளிடவும்'); 
+    ok = false; 
+}
+  /* Daily OTP limit (max 10/day) */
+  if(otpRemaining() <= 0){
+    setFieldError(p + 'MobileNum','இன்றைய OTP வரம்பு (10) முடிந்தது — நாளை முயலவும்');
+    showToast('இன்று OTP வரம்பு முடிந்தது (10/நாள்)', true);
+    return;
+  }
+
+  if(!window.fbReady){   /* offline/demo fallback → demo OTP modal */
+    setLoading(p + 'MobileSubmit', true);
+    bumpOtpCount();
+    setTimeout(function(){ setLoading(p + 'MobileSubmit', false); openOtpModal(mode, mob, true); }, 500);
+    return;
+  }
+
+  /* REAL Firebase Phone Auth: RecaptchaVerifier + signInWithPhoneNumber */
+  var verifier = ensureRecaptcha();
+    bumpOtpCount(); openOtpModal(mode, mob, true); return; }
+
+  setLoading('MobileSubmit', true);
+
+if (window.fbAuth && typeof window.fbAuth.signInWithPhoneNumber === 'function') {
+    window.fbAuth.signInWithPhoneNumber('+91' + mob, verifier)
+    .then(function(confResult) {
+        confirmationResult = confResult;
+        bumpOtpCount();
+        dbWrite('events', { type: 'otp_sent', mobile: '+91' + mob, mode: mode });
+        
+        // இங்கே 'p +' என்பதை நீக்கிவிட்டு 'MobileSubmit' என்று மட்டும் கொடுத்துள்ளேன்
+        setLoading('MobileSubmit', false); 
+        openOtpModal(mode, mob, false);
+    })
+    .catch(function(err) {
+        setLoading('MobileSubmit', false);
+        var c = err && err.code ? err.code : '';
+        try { if(recaptchaVerifier) { recaptchaVerifier.clear(); recaptchaVerifier = null; } } catch(e) {}
+        if(c === 'auth/too-many-requests') {
+            setFieldError('MobileNum', 'அதிக முயற்சிகள் — சிறிது நேரம் கழித்து முயலவும்');
+        } else if(c === 'auth/invalid-phone-number') {
+            setFieldError('MobileNum', 'மொபைல் நம்பர் தவறு');
+        } else {
+            showToast('OTP அனுப்ப முடியவில்லை: ' + (err && err.message ? err.message : c), true);
+        }
+    });
+if (window.fbReady) {
+    // Firebase ரெடியாக இருந்தால், உங்கள் லாஜிக் தொடரும்...
+    // sendOtp வேலைகளை இங்கே செய்யவும்
+} else {
+    // Firebase ரெடியாக இல்லை என்றால்:
+    console.warn("Firebase காத்திருக்கிறது...");
+    setLoading('MobileSubmit', false); // இதை நீக்காதீர்கள்! இது லோடிங்கை நிறுத்தி பட்டனை மீண்டும் கிளிக் செய்ய வைக்கும்.
+    
+    // பிறகு காத்திருந்து முயற்சிக்கும் கோடு
+}
+   setTimeout(sendOTP, 1000);
+}
+ 
+function openOtpModal(mode, mob){
+  var digits = 6;
+  var m = scr('modal');
+  m.textContent = '';
+  m.appendChild(el('div','grab'));
+  m.appendChild(el('h3', null, 'OTP சரிபார்ப்பு'));
+  m.appendChild(el('p', null, '+91 ' + mob + ' எண்ணுக்கு SMS-ல் அனுப்பப்பட்ட ' + digits + ' இலக்க OTP-ஐ உள்ளிடவும்.'));
+
+  var box = el('div','otp-box');
+  var ids = [];
+  for(var i=1;i<=digits;i++){ ids.push('o'+i); }
+  ids.forEach(function(id){
+    var inp = document.createElement('input');
+    inp.maxLength = 1; inp.id = id; inp.inputMode = 'numeric';
+    inp.setAttribute('aria-label','OTP இலக்கம்');
+    box.appendChild(inp);
+  });
+  m.appendChild(box);
+
+ // இது மட்டுமே இருக்க வேண்டும்:
+if (!window.fbReady || !confirmationResult) {
+    showToast('பிழை: மீண்டும் முயற்சிக்கவும்', true);
+    return;
+} else {
+    var rnote = el('div','otp-note');
+    rnote.textContent = 'உங்கள் மொபைலுக்கு வந்த SMS OTP-ஐ உள்ளிடவும்.';
+    m.appendChild(rnote);
+  }
+
+  var btn = el('button','primary-btn','சரிபார் & தொடர்');
+  btn.type = 'button';
+  btn.style.marginTop = '18px';
+  btn.id = 'otpVerifyBtn';
+  btn.addEventListener('click', function(){ verifyOtp(mode,digits); });
+  m.appendChild(btn);
+
+  openModal();
+  setupOtpInputs(ids);
+}
+function setupOtpInputs(ids){
+  ids.forEach(function(id, i){
+    var elm = scr(id);
+    elm.addEventListener('input', function(){
+      elm.value = onlyDigits(elm.value).slice(0,1);   /* numeric only */
+      if(elm.value && i < ids.length - 1) scr(ids[i+1]).focus();
+    });
+    elm.addEventListener('keydown', function(e){
+      if(e.key === 'Backspace' && !elm.value && i > 0) scr(ids[i-1]).focus();
+    });
+  });
+  setTimeout(function(){ scr(ids[0]).focus(); }, 200);
+}
+function collectOtp(digits){
+  var code = '';
+  for(var i=1;i<=digits;i++){ var e = scr('o'+i); code += (e ? e.value : ''); }
+  return code;
+}
+function verifyOtp(mode,digits){
+  var code = collectOtp(digits);
+  if(code.length !== digits){ showToast(digits + ' இலக்க OTP உள்ளிடவும்', true); return; }
+
+if (!window.fbReady || !confirmationResult) {
+    showToast('பிழை: மீண்டும் முயற்சிக்கவும்', true);
+    return;
+}
+  /* REAL Firebase: confirm the code */
+  setLoading('otpVerifyBtn', true);
+  confirmationResult.confirm(code)
+    .then(function(result){
+      dbWriteUser('donors', result.user.uid, { mobile: result.user.phoneNumber || '',
+        method: 'mobile', lastLogin: firebase.database.ServerValue.TIMESTAMP });
+      dbWrite('events', { type: 'otp_verified', mobile: result.user.phoneNumber || '', mode: mode });
+      setLoading('otpVerifyBtn', false);
+      confirmationResult = null;
+      closeModal();
+      authSuccess(mode, 'mobile');
+    })
+    .catch(function(err){
+      setLoading('otpVerifyBtn', false);
+      var c = err && err.code ? err.code : '';
+      if(c === 'auth/invalid-verification-code'){ showToast('OTP தவறு — மீண்டும் முயலவும்', true); }
+      else if(c === 'auth/code-expired'){ showToast('OTP காலாவதியானது — புதிய OTP கேட்கவும்', true); }
+      else { showToast('OTP சரிபார்ப்பு தோல்வி: ' + (err && err.message ? err.message : c), true); }
+    });
+}
+
+/* ---------- Shared success handler for all 3 methods ---------- */
+function authSuccess(mode, method){
+  saveState();
+  showToast(mode === 'login' ? 'உள்நுழைவு வெற்றி ✅' : 'கணக்கு உருவாக்கப்பட்டது ✅');
+  setTimeout(function(){ go('donorDash'); }, 650);
+}
+
+/* ---------- Donor dashboard ---------- */
+var myRecords = [];
+function toggleActive(elm, silent){
+  var banner = scr('donorStatusBanner');
+  if(elm.checked){
+    banner.className = 'status-banner status-on';
+    banner.textContent = '🟢 நீங்கள் தற்போது ஆக்டிவ் — ரிசீவர்கள் உங்களை தேட முடியும்';
+    if(!silent) showToast('நீங்கள் இப்போது ஆக்டிவ் 🟢');
+  } else {
+    banner.className = 'status-banner status-off';
+    banner.textContent = 'நீங்கள் தற்போது செயலற்ற நிலையில் உள்ளீர்கள்';
+    if(!silent) showToast('நீங்கள் இப்போது செயலற்ற நிலையில் 🔴');
+  }
+  saveState();
+}
+function addDonorRecord(){
+  clearErrors(['dNm','dLoc','dBlood','dMob']);
+  var nm  = scr('dNm').value.trim();
+  var loc = scr('dLoc').value.trim();
+  var bl  = scr('dBlood').value;
+  var mob = onlyDigits(scr('dMob').value);
+  var ok = true;
+  if(!nm){ setFieldError('dNm','பெயரை உள்ளிடவும்'); ok = false; }
+  if(!loc){ setFieldError('dLoc','ஊரை உள்ளிடவும்'); ok = false; }
+  if(!bl){ setFieldError('dBlood','பிளட் குரூப் தேர்ந்தெடுக்கவும்'); ok = false; }
+  if (mob.length < 10 || mob.length > 13) { 
+    setFieldError('rcvMob', 'சரியான மொபைல் எண்ணை உள்ளிடவும்'); 
+    ok = false; 
+}
+  if(!ok) return;
+
+  myRecords.push({name:nm, loc:loc, blood:bl, mob:mob});
+  /* Persist to Realtime Database — this donor becomes searchable by receivers.
+     'active' reflects the dashboard On/Off toggle. */
+  var isActive = scr('activeToggle') ? scr('activeToggle').checked : true;
+  dbWrite('records', { name: nm, loc: loc, blood: bl, mobile: '+91' + mob,
+    active: isActive, ownerUid: (fbUser ? fbUser.uid : '') });
+  scr('dNm').value = ''; scr('dLoc').value = ''; scr('dBlood').value = ''; scr('dMob').value = '';
+  scr('curMobLabel').textContent = 'தற்போது: +91 ' + mob;
+  renderMyRecords();
+  saveState();
+  showToast('பதிவு வெற்றிகரமாக சேர்க்கப்பட்டது ✅ (Firebase-ல் சேமிக்கப்பட்டது)');
+}
+/* Render my records with SAFE DOM APIs. */
+function renderMyRecords(){
+  var box = scr('myDonorRecords');
+  box.textContent = '';
+  if(myRecords.length === 0){
+    var em = el('div','empty');
+    em.appendChild(el('div','ei','🩸'));
+    em.appendChild(el('p', null, 'இன்னும் பதிவுகள் இல்லை. மேலே உங்கள் விவரங்களை சேர்க்கவும்.'));
+    box.appendChild(em);
+    return;
+  }
+  myRecords.forEach(function(d){
+    var card = el('div','donor-card');
+    var top = el('div','donor-top');
+    top.appendChild(el('div','donor-avatar', d.name.charAt(0)));
+
+    var info = el('div','donor-info');
+    var nm = el('div','nm', d.name);
+    nm.appendChild(el('span','badge-mine','என்'));
+    info.appendChild(nm);
+    info.appendChild(el('div','loc','📍 ' + d.loc + ' · 📱 +91 ' + d.mob));
+    top.appendChild(info);
+    top.appendChild(el('div','blood-tag', d.blood));
+
+    card.appendChild(top);
+    box.appendChild(card);
+  });
+}
+
+/* ---------- Settings: mobile update & delete ---------- */
+function openMobileUpdate(){
+  var m = scr('modal');
+  m.textContent = '';
+  m.appendChild(el('div','grab'));
+  m.appendChild(el('h3', null, 'மொபைல் நம்பர் அப்டேட்'));
+  m.appendChild(el('p', null, 'புதிய மொபைல் நம்பரை உள்ளிடவும். OTP மூலம் சரிபார்க்கப்படும்.'));
+
+  var field = el('div','field');
+  field.appendChild(el('label', null, 'புதிய மொபைல் நம்பர்'));
+  var wrap = el('div','with-icon');
+  var pre = el('span','pre','📱'); pre.setAttribute('aria-hidden','true');
+  var inp = document.createElement('input');
+  inp.id = 'newMob'; inp.type = 'tel'; inp.inputMode = 'numeric'; inp.maxLength = 14;
+  inp.placeholder = 'புதிய நம்பர்';
+  wrap.appendChild(pre); wrap.appendChild(inp);
+  field.appendChild(wrap);
+  var errP = el('p','field-err'); errP.id = 'newMob-err'; errP.setAttribute('role','alert');
+  field.appendChild(errP);
+  m.appendChild(field);
+
+  var btn = el('button','primary-btn','அப்டேட் செய் →');
+  btn.type = 'button';
+  btn.addEventListener('click', doMobileUpdate);
+  m.appendChild(btn);
+  openModal();
+  setTimeout(function(){ inp.focus(); }, 200);
+}
+function doMobileUpdate(){
+  clearFieldError('newMob');
+  var v = onlyDigits(scr('newMob').value);
+ if (mob.length < 10 || mob.length > 13) { 
+    setFieldError('rcvMob', 'சரியான மொபைல் எண்ணை உள்ளிடவும்'); 
+    ok = false; 
+}
+  scr('curMobLabel').textContent = 'தற்போது: +91 ' + v;
+  closeModal();
+  showToast('மொபைல் நம்பர் அப்டேட் ஆனது ✅');
+}
+function openDelete(){
+  var m = scr('modal');
+  m.textContent = '';
+  m.appendChild(el('div','grab'));
+  var h = el('h3', null, 'கணக்கை நீக்கவா?');
+  h.style.color = 'var(--red)';
+  m.appendChild(h);
+  m.appendChild(el('p', null, 'உங்கள் கணக்கு மற்றும் அனைத்து பதிவுகளும் நிரந்தரமாக நீக்கப்படும். இதை மீட்க முடியாது.'));
+  var btns = el('div','modal-btns');
+  var cancel = el('button','ghost-btn','ரத்து செய்'); cancel.type = 'button';
+  cancel.addEventListener('click', function(){ closeModal(); });
+  var del = el('button','primary-btn','நீக்கு'); del.type = 'button';
+  del.addEventListener('click', doDelete);
+  btns.appendChild(cancel); btns.appendChild(del);
+  m.appendChild(btns);
+  openModal();
+}
+function doDelete(){
+  myRecords = [];
+  renderMyRecords();
+  scr('activeToggle').checked = false;
+  toggleActive(scr('activeToggle'), true);
+  try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  closeModal();
+  showToast('கணக்கு நீக்கப்பட்டது');
+  setTimeout(function(){
+    stack = ['home'];
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active','left'); });
+    scr('home').classList.add('active');
+  }, 800);
+}
+
+/* ---------- Policy modal (static, trusted content) ---------- */
+/* ================= UPI Donation ================= */
+/* Payee (UPI) config — receiver's VPA. Amount chosen by donor. */
+var UPI_CFG = {
+  pa: 'tk275347@okaxis',                       /* payee VPA (UPI ID) */
+  pn: 'உயிர்காக்கும் இரத்தம் தானம்',            /* payee name */
+  cu: 'INR',
+  tn: 'இரத்த தான ஆப் நன்கொடை'                   /* transaction note */
+};
+
+/* Platform detection */
+function isAndroid(){ return /Android/i.test(navigator.userAgent || ''); }
+function isIOS(){ return /iPhone|iPad|iPod/i.test(navigator.userAgent || ''); }
+function isMobileDevice(){ return isAndroid() || isIOS(); }
+
+/* Build a standards-compliant UPI deep link: upi://pay?pa=..&pn=..&am=..&cu=INR&tn=.. */
+function buildUpiUri(amount){
+  var p = 'pa=' + encodeURIComponent(UPI_CFG.pa) +
+          '&pn=' + encodeURIComponent(UPI_CFG.pn) +
+          '&cu=' + encodeURIComponent(UPI_CFG.cu) +
+          '&tn=' + encodeURIComponent(UPI_CFG.tn);
+  if(amount && Number(amount) > 0){ p += '&am=' + encodeURIComponent(String(amount)); }
+  return 'upi://pay?' + p;
+}
+
+/* Launch the installed UPI app.
+   Android → intent:// with browser_fallback + package-agnostic chooser (any UPI app).
+   iOS     → upi://pay (Safari hands off to installed UPI apps).                     */
+function launchUpi(amount){
+  var upi = buildUpiUri(amount);
+  if(isAndroid()){
+    /* intent:// lets Android show the UPI app chooser (GPay / PhonePe / Paytm / BHIM…) */
+    var query = upi.substring('upi://pay?'.length);
+    var intentUri = 'intent://pay?' + query +
+      '#Intent;scheme=upi;action=android.intent.action.VIEW;end';
+    window.location.href = intentUri;
+    /* Fallback to plain upi:// if intent handling is blocked */
+    setTimeout(function(){ try{ window.location.href = upi; }catch(e){} }, 800);
+  } else {
+    /* iOS + any other scheme-aware environment */
+    window.location.href = upi;
+  }
+}
+
+/* Copy helper (clipboard API + textarea fallback) */
+function copyText(txt, okMsg){
+  function ok(){ showToast(okMsg || '✅ நகலெடுக்கப்பட்டது'); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(ok, function(){ fallbackCopy(txt, ok); });
+  } else { fallbackCopy(txt, ok); }
+}
+function fallbackCopy(txt, ok){
+  var ta = document.createElement('textarea');
+  ta.value = txt; ta.setAttribute('readonly',''); ta.style.position='absolute'; ta.style.left='-9999px';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); ok && ok(); }catch(e){ showToast('நகலெடுக்க முடியவில்லை', true); }
+  document.body.removeChild(ta);
+}
+
+/* Entry point — opens the donation amount modal */
+window.donateUPI = function() {
+  openDonateModal();
+}
+
+var selectedAmount = 0; /* 0 = donor decides inside the UPI app */
+
+/* Donation amount-select modal (safe DOM build, a11y) */
+function openDonateModal(){
+  selectedAmount = 0;
+  var m = scr('modal');
+  m.textContent = '';
+  m.appendChild(el('div','grab'));
+  m.appendChild(el('h3', null, '💝 நன்கொடை செலுத்து'));
+
+  var lead = el('p','donate-lead',
+    'உங்கள் நன்கொடை உயிர்காக்கும் இரத்த தானத்திற்கு உதவும். தொகையைத் தேர்வு செய்து UPI ஆப் மூலம் செலுத்துங்கள்.');
+  m.appendChild(lead);
+
+  /* Payee row */
+  var payee = el('div','donate-payee');
+  payee.appendChild(el('span','dp-label','பெறுநர் UPI ID'));
+  var vpaRow = el('div','dp-vpa');
+  vpaRow.appendChild(el('span','dp-id', UPI_CFG.pa));
+  var copyBtn = el('button','dp-copy','நகலெடு');
+  copyBtn.type = 'button';
+  copyBtn.setAttribute('aria-label','UPI ID நகலெடு');
+  copyBtn.addEventListener('click', function(){ copyText(UPI_CFG.pa, '✅ UPI ID நகலெடுக்கப்பட்டது'); });
+  vpaRow.appendChild(copyBtn);
+  payee.appendChild(vpaRow);
+  m.appendChild(payee);
+
+  /* Amount chips */
+  var amtWrap = el('div','amt-wrap');
+  amtWrap.setAttribute('role','group');
+  amtWrap.setAttribute('aria-label','நன்கொடை தொகை');
+  var amounts = [100, 200, 500, 1000];
+  var chips = [];
+  amounts.forEach(function(a){
+    var c = el('button','amt-chip','₹' + a);
+    c.type = 'button';
+    c.setAttribute('aria-pressed','false');
+    c.addEventListener('click', function(){
+      selectedAmount = a;
+      chips.forEach(function(x){ x.classList.remove('sel'); x.setAttribute('aria-pressed','false'); });
+      c.classList.add('sel'); c.setAttribute('aria-pressed','true');
+      var ci = scr('customAmt'); if(ci) ci.value = '';
+    });
+    chips.push(c);
+    amtWrap.appendChild(c);
+  });
+  m.appendChild(amtWrap);
+
+  /* Custom amount */
+  var custWrap = el('div','field');
+  var lbl = el('label', null, 'அல்லது தொகையை உள்ளிடுங்கள் (₹)');
+  lbl.setAttribute('for','customAmt');
+  custWrap.appendChild(lbl);
+  var ci = document.createElement('input');
+  ci.type = 'tel'; ci.id = 'customAmt'; ci.inputMode = 'numeric';
+  ci.placeholder = 'எ.கா. 250'; ci.maxLength = 6;
+  ci.setAttribute('aria-label','தனிப்பயன் நன்கொடை தொகை');
+  ci.addEventListener('input', function(){
+    ci.value = onlyDigits(ci.value);
+    if(ci.value){ selectedAmount = Number(ci.value);
+      chips.forEach(function(x){ x.classList.remove('sel'); x.setAttribute('aria-pressed','false'); }); }
+  });
+  custWrap.appendChild(ci);
+  m.appendChild(custWrap);
+
+  /* Optional note for donor */
+  var note = el('p','donate-note',
+    '💡 தொகை தேர்வு செய்யாவிட்டால், UPI ஆப்பில் நீங்களே தொகையை உள்ளிடலாம்.');
+  m.appendChild(note);
+
+  /* Pay button */
+  var pay = el('button','primary-btn','▶ UPI ஆப்பில் செலுத்து');
+  pay.type = 'button';
+  pay.addEventListener('click', function(){ proceedPay(); });
+  m.appendChild(pay);
+
+  /* Cancel */
+  var cancel = el('button','ghost-btn','ரத்து செய்');
+  cancel.type = 'button';
+  cancel.addEventListener('click', function(){ closeModal(); });
+  m.appendChild(cancel);
+
+  openModal();
+}
+
+/* Decide flow: mobile → launch UPI app; desktop → show UPI ID + copy guidance */
+function proceedPay(){
+  var amt = selectedAmount > 0 ? selectedAmount : '';
+  if(isMobileDevice()){
+    showToast('UPI ஆப் திறக்கிறது…');
+    launchUpi(amt);
+    /* keep the modal so user can retry / copy ID if no app opened */
+  } else {
+    showDesktopPay(amt);
+  }
+}
+
+/* Desktop: no UPI app to launch → show the UPI ID + amount + copy, so the user
+   can pay from their phone (scan / manual). */
+function showDesktopPay(amt){
+  var m = scr('modal');
+  m.textContent = '';
+  m.appendChild(el('div','grab'));
+  m.appendChild(el('h3', null, '💳 மொபைலில் செலுத்துங்கள்'));
+
+  m.appendChild(el('p','donate-lead',
+    'டெஸ்க்டாப்/லேப்டாப்பில் UPI ஆப் இல்லை. கீழே உள்ள UPI ID-ஐ உங்கள் மொபைல் UPI ஆப்பில் (Google Pay / PhonePe / Paytm) உள்ளிட்டு செலுத்துங்கள்.'));
+
+  var box = el('div','desktop-vpa');
+  box.appendChild(el('span','dp-label','UPI ID'));
+  box.appendChild(el('div','dp-id-big', UPI_CFG.pa));
+  if(amt){ box.appendChild(el('div','dp-amt', 'தொகை: ₹' + amt)); }
+  m.appendChild(box);
+
+  var copyBtn = el('button','primary-btn','📋 UPI ID நகலெடு');
+  copyBtn.type = 'button';
+  copyBtn.addEventListener('click', function(){ copyText(UPI_CFG.pa, '✅ UPI ID நகலெடுக்கப்பட்டது'); });
+  m.appendChild(copyBtn);
+
+  var tryBtn = el('button','ghost-btn','இந்த சாதனத்தில் UPI ஆப் முயற்சிக்கவும்');
+  
+ tryBtn.type = 'button';
+  tryBtn.addEventListener('click', function(){ launchUpi(amt); });
+  m.appendChild(tryBtn);
+
+  var closeBtn = el('button','ghost-btn','மூடு');
+  closeBtn.type = 'button';
+  closeBtn.addEventListener('click', function(){ closeModal(); });
+  m.appendChild(closeBtn);
+
+  openModal();
+}
+/* ================= /UPI Donation ================= */
+
+function openPolicy(type, e){
+  if(e){ e.preventDefault(); e.stopPropagation(); }
+  var m = scr('modal');
+  m.textContent = '';
+  m.appendChild(el('div','grab'));
+
+  var title = (type === 'terms') ? 'விதிமுறைகள் & நிபந்தனைகள்' : 'தனியுரிமைக் கொள்கை';
+  m.appendChild(el('h3', null, title));
+
+  var body = el('div','policy-body');
+  var items = (type === 'terms')
+    ? [['1. சேவை பயன்பாடு','இந்த ஆப் இரத்த தானம் செய்பவர்களையும், தேவைப்படுபவர்களையும் இணைக்கும் ஒரு தளமாகும். இது மருத்துவ ஆலோசனை அல்ல.'],
+       ['2. தகவல் துல்லியம்','பயனர்கள் சரியான மற்றும் உண்மையான தகவல்களை வழங்க வேண்டும்.'],
+       ['3. தொடர்பு','டோனர்களை தொடர்பு கொள்வது பயனரின் பொறுப்பாகும். ஆப் எந்த தொடர்புக்கும் உத்தரவாதம் அளிக்காது.'],
+       ['4. துஷ்பிரயோகம்','இந்த தளத்தை தவறாக பயன்படுத்துவது கணக்கு நீக்கத்திற்கு வழிவகுக்கும்.']]
+    : [['1. தகவல் சேகரிப்பு','பெயர், மொபைல் நம்பர், பிளட் குரூப் மற்றும் லொகேஷன் ஆகியவை சேகரிக்கப்படுகின்றன.'],
+       ['2. மொபைல் நம்பர் பாதுகாப்பு','டோனர்களின் மொபைல் நம்பர்கள் மறைக்கப்பட்டு பாதுகாக்கப்படுகின்றன. மெசேஜ் அனுப்பிய பின்னரே தொடர்பு செயல்படுத்தப்படும்.'],
+       ['3. தரவு பகிர்வு','உங்கள் தகவல் மூன்றாம் தரப்பினருடன் விற்கப்படாது.'],
+       ['4. உங்கள் உரிமைகள்','எந்த நேரத்திலும் உங்கள் கணக்கை நீக்கலாம் அல்லது தகவலை அப்டேட் செய்யலாம்.']];
+
+  items.forEach(function(it){
+    body.appendChild(el('h4', null, it[0]));
+    body.appendChild(document.createTextNode(it[1]));
+  });
+  m.appendChild(body);
+
+  var btn = el('button','primary-btn','சரி, புரிந்தது');
+  btn.type = 'button';
+  btn.addEventListener('click', function(){ closeModal(); });
+  m.appendChild(btn);
+  openModal();
+}
+
+/* ---------- Modal helpers (with Esc-to-close a11y) ---------- */
+function openModal(){ scr('modalOverlay').classList.add('show'); }
+function closeModal(e){
+  if(e && e.target !== scr('modalOverlay') && e.type === 'click') return;
+  scr('modalOverlay').classList.remove('show');
+}
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape') closeModal();
+});
+
+/* ---------- Init ---------- */
+loadState();
+renderMyRecords();
+updateOnline();
+updateOtpCounterUI();
+/* NOTE: Service worker is registered once in the PWA section above (installPWA block). */
+
+ // உங்கள் கோப்பின் கடைசியில் இதைச் சேர்க்கவும்:
+
+window.addEventListener('load', () => {
+    // 1. பட்டன் பங்க்ஷன்களை இங்கே உறுதிப்படுத்துங்கள்
+    window.donateUPI = function() { 
+        if (typeof openDonateModal === 'function') openDonateModal(); 
+    };
+
+    window.installPWA = function() { 
+        if (typeof triggerInstallPrompt === 'function') triggerInstallPrompt(); 
+    };
+
+    window.go = function(id) { 
+        // உங்கள் 'go' பங்க்ஷன் ஏற்கனவே எங்கே இருந்தாலும், 
+        // பட்டன்கள் அதை இப்போது கண்டறிய முடியும்.
+        if (typeof navigateTo === 'function') navigateTo(id); 
+    };
+
+    // 2. Firebase Auth உறுதிப்படுத்துதல்
+    if (typeof getAuth !== 'undefined') {
+        window.fbAuth = getAuth();
+    }
+    
+    console.log("பட்டன்கள் மற்றும் Firebase தயாராகிவிட்டன!");
+});
+</script>
+<!-- invisible reCAPTCHA host for Firebase Phone Auth -->
+<div id="recaptcha-container"></div>
+</body>
+</html>
