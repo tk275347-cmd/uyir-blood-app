@@ -8,9 +8,8 @@
  <!-- ===== Security: Content Security Policy =====
      script/style: self + inline (single-file app needs inline).
      Fonts allowed only from Google Fonts; images self/data; no framing; connect self. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://apis.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebasedatabase.app https://securetoken.googleapis.com https://identitytoolkit.googleapis.com wss://*.firebasedatabase.app https://github.com https://raw.githubusercontent.com; frame-src https://*.firebaseapp.com https://www.google.com https://accounts.google.com https://apis.google.com; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://apis.google.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://securetoken.googleapis.com https://identitytoolkit.googleapis.com https://github.com https://raw.githubusercontent.com; frame-src https://*.firebaseapp.com https://www.google.com https://accounts.google.com https://apis.google.com; base-uri 'self'; form-action 'self'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
-
 <!-- ===== PWA ===== -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#d32029">
