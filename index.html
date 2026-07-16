@@ -1388,7 +1388,7 @@ function searchDonors(){
   box.textContent = '';
   box.appendChild(el('p','hint','🔄 டோனர்கள் ஏற்றப்படுகிறது…'));
 
-  window.fbDB.ref('records').once('value')
+ get(ref( window.fbDB,'records')).once('value')
     .then(function(snap){
       var list = [];
       snap.forEach(function(child){
