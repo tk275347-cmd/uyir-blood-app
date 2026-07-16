@@ -847,7 +847,7 @@
     signOut, deleteUser
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
   import {
-    getDatabase, ref, set, push, get, remove, serverTimestamp
+    getDatabase, ref, set, push, get, query, orderByChild, equalTo, remove, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
 
  const firebaseConfig = {
@@ -881,6 +881,10 @@
   window.fbDbRemove      = function (path) { return remove(ref(window.fbDB, path)); };
   window.fbDbGet         = function (path) { return get(ref(window.fbDB, path)); };
   window.fbServerTimestamp = function () { return serverTimestamp(); };
+window.fbQuery = query;
+window.fbOrderByChild = orderByChild;
+window.fbEqualTo = equalTo;
+window.fbRef = ref; // 'ref' பங்க்ஷனையும் சேர்த்துக் கொள்ளுங்கள்
 
   console.log("Firebase Modular SDK initialized!");
   document.dispatchEvent(new Event('firebase-ready'));
@@ -1388,8 +1392,7 @@ function searchDonors(){
   box.textContent = '';
   box.appendChild(el('p','hint','🔄 டோனர்கள் ஏற்றப்படுகிறது…'));
 
- const db = window.fbDB;
- get(ref( db,'records'))
+window.fbDbGet('records')
     .then(function(snap){
       var list = [];
       snap.forEach(function(child){
@@ -1996,11 +1999,10 @@ function addDonorRecord(){
   
   if(!ok) return;
 
-  // டூப்ளிகேட் தடுப்பு: டேட்டாபேஸில் இந்த எண் ஏற்கனவே உள்ளதா என்று பார்க்கவும்
- const db = window.fbDB;
-const recordsRef = ref(db,'records');
- const q = query(recordsRef, orderByChild('mobile'), equalTo('+91' + mob));
-    get(q).then((snapshot) => {
+  // டூப்ளிகேட் தடுப்பு: டேட்டாபேஸில் இந்த எண் ஏற்கனவே உள்ளதா என்று பார்க்கவும
+ const recordsRef = window.fbRef(window.fbDatabase,'records');
+ const q = window.fbQuery(recordsRef, window.fbOrderByChild('mobile'), window.fbEqualTo('+91' + mob));
+    window.fbGet(q).then((snapshot) => {
       if (snapshot.exists()) {
         showToast( 'இந்த மொபைல் எண் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது!');
         showToast('பதிவு செய்ய முடியவில்லை: எண் ஏற்கனவே உள்ளது ⚠️', true);
