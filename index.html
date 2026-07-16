@@ -1388,7 +1388,8 @@ function searchDonors(){
   box.textContent = '';
   box.appendChild(el('p','hint','🔄 டோனர்கள் ஏற்றப்படுகிறது…'));
 
- get(ref( window.fbDB,'records')).once('value')
+ const db = window.fbDB;
+ get(ref( db,'records'))
     .then(function(snap){
       var list = [];
       snap.forEach(function(child){
@@ -1397,10 +1398,10 @@ function searchDonors(){
         list.push({ name: v.name || '', loc: v.loc || '', blood: v.blood || '',
                     mob: onlyDigits(v.mobile || '') });
       });
-      filterAndRender(list.length ? list : DONORS);
+      filterAndRender(list.length > 0 ? list : DONORS);
     })
     .catch(function(err){
-      console.warn('records read failed:', err && err.message);
+      console.warn('records read failed:', err);
       filterAndRender(DONORS);
     });
 }
@@ -1996,16 +1997,19 @@ function addDonorRecord(){
   if(!ok) return;
 
   // டூப்ளிகேட் தடுப்பு: டேட்டாபேஸில் இந்த எண் ஏற்கனவே உள்ளதா என்று பார்க்கவும்
-  window.fbDB.ref('records').orderByChild('mobile').equalTo('+91' + mob)
-    .once('value').then(function(snapshot) {
+ const db = window.fbDB;
+const recordsRef = ref(db,'records');
+ const q = query(recordsRef, orderByChild('mobile'), equalTo('+91' + mob));
+    get(q).then((snapshot) => {
       if (snapshot.exists()) {
-        setFieldError('dMob', 'இந்த மொபைல் எண் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது!');
+        showToast( 'இந்த மொபைல் எண் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது!');
         showToast('பதிவு செய்ய முடியவில்லை: எண் ஏற்கனவே உள்ளது ⚠️', true);
       } else {
         // எண் இல்லை என்றால் மட்டும் சேமிக்கவும்
         saveDonorToDB(nm, loc, bl, mob);
       }
-    }).catch(function(err){
+    }).catch((err) => {
+     console.error("பிழை:", err);
         showToast('பிழை ஏற்பட்டது, மீண்டும் முயற்சிக்கவும்', true);
     });
 }
