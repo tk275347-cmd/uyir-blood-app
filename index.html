@@ -906,6 +906,26 @@ document.addEventListener('firebase-ready', function () {
   fbUser  = window.fbUser || null;
 });
 
+ function loadMyRecordsFromDB() {
+    if (!fbDB || !fbUser) return;
+
+    fbDB.ref('records')
+        .orderByChild('ownerUid')
+        .equalTo(fbUser.uid)
+        .once('value')
+        .then(function(snapshot) {
+            if (snapshot.exists()) {
+                myRecords = [];
+                snapshot.forEach(function(child) {
+                    myRecords.push(child.val());
+                });
+                renderMyRecords();
+            }
+        })
+        .catch(function(err) {
+            console.error("தரவை எடுக்க முடியவில்லை:", err);
+        });
+}
  /* --- RECAPTCHA HELPER (Modular SDK compliant) --- */
 function ensureRecaptcha() {
   if (window.recaptchaVerifier) {
@@ -1303,9 +1323,92 @@ function searchDonors(){
 }
 
 /* Build donor result cards with SAFE DOM APIs (no innerHTML string concat). */
+/* 1. ரிசீவர் பதிவு மற்றும் Regex சரிபார்ப்பு (திருத்தப்பட்டது) */
+function submitReceiver(){
+  clearErrors(['rcvName','rcvMob','rcvWa']);
+  var nm  = scr('rcvName').value.trim();
+  var mob = onlyDigits(scr('rcvMob').value);
+  var wa  = onlyDigits(scr('rcvWa').value);
+  
+  // 10 இலக்க இந்திய எண் சரிபார்ப்புக்கான Regex
+  var mobRegex = /^[6-9]\d{9}$/; 
+  var ok = true;
+
+  if(!nm){ setFieldError('rcvName','பெயரை உள்ளிடவும்'); ok = false; }
+  
+  // மொபைல் எண் சரிபார்ப்பு
+  if (!mobRegex.test(mob)) { 
+    setFieldError('rcvMob', 'சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்'); 
+    ok = false; 
+  }
+  
+  // வாட்ஸ்அப் எண் சரிபார்ப்பு
+  if (!mobRegex.test(wa)) { 
+    setFieldError('rcvWa','சரியான 10 இலக்க வாட்ஸ்அப் நம்பர் தேவை'); 
+    ok = false; 
+  }
+  
+  if(!scr('rcvTc').checked){ showToast('விதிமுறைகளை ஏற்க வேண்டும்', true); ok = false; }
+  if(ok && !scr('rcvPp').checked){ showToast('தனியுரிமைக் கொள்கையை ஏற்க வேண்டும்', true); ok = false; }
+  
+  if(!ok) return;
+
+  setLoading('rcvSubmit', true);
+  
+  // டேட்டாபேஸில் சேமித்தல்
+  dbWrite('receivers', { name: nm, mobile: '+91' + mob, whatsapp: '+91' + wa });
+  
+  setTimeout(function(){
+    setLoading('rcvSubmit', false);
+    showToast('பதிவு வெற்றி! டோனர்களை தேடுங்கள் ✅');
+    
+    // தேடல் பகுதியை புதுப்பித்து, அந்தத் திரைக்கு மாற்றுதல்
+    searchDonors();
+    go('receiverSearch'); 
+  }, 650);
+}
+
+/* 2. டோனர் தேடல் பங்க்ஷன் (Search logic remains same and robust) */
+function searchDonors(){
+  var b   = scr('fltBlood').value.trim();
+  var loc = scr('fltLoc').value.trim().toLowerCase();
+
+  function filterAndRender(list){
+    var out = list.filter(function(d){
+      var okB = !b || d.blood === b;
+      var okL = !loc || (d.loc || '').toLowerCase().indexOf(loc) !== -1;
+      return okB && okL;
+    });
+    renderDonorResults(out);
+  }
+
+  if( !window.fbReady || !window.fbDB){ filterAndRender(DONORS); return; }
+
+  var box = scr('donorResults');
+  box.textContent = '';
+  box.appendChild(el('p','hint','🔄 டோனர்கள் ஏற்றப்படுகிறது…'));
+
+  window.fbDB.ref('records').once('value')
+    .then(function(snap){
+      var list = [];
+      snap.forEach(function(child){
+        var v = child.val() || {};
+        if(v.active === false) return;
+        list.push({ name: v.name || '', loc: v.loc || '', blood: v.blood || '',
+                    mob: onlyDigits(v.mobile || '') });
+      });
+      filterAndRender(list.length ? list : DONORS);
+    })
+    .catch(function(err){
+      console.warn('records read failed:', err && err.message);
+      filterAndRender(DONORS);
+    });
+}
+
+/* 3. ரிசல்ட் கார்டுகள் உருவாக்குதல் */
 function renderDonorResults(out){
   var box = scr('donorResults');
-  box.textContent = '';   /* clear */
+  box.textContent = '';
 
   if(out.length === 0){
     var em = el('div','empty');
@@ -1316,13 +1419,13 @@ function renderDonorResults(out){
   }
 
   out.forEach(function(d){
-    var key = d.mob;                       /* internal key, not shown */
+    var key = d.mob;
     var card = el('div','donor-card');
 
     var top = el('div','donor-top');
     top.appendChild(el('div','donor-avatar', d.name.charAt(0)));
     var info = el('div','donor-info');
-    info.appendChild(el('div','nm', d.name));           /* textContent-escaped */
+    info.appendChild(el('div','nm', d.name));
     info.appendChild(el('div','loc', '📍 ' + d.loc));
     top.appendChild(info);
     top.appendChild(el('div','blood-tag', d.blood));
@@ -1334,13 +1437,11 @@ function renderDonorResults(out){
     var msgBtn = el('button','act-btn msg-btn','💬 மெசேஜ் அனுப்பு');
     msgBtn.type = 'button';
     msgBtn.id = 'msg-' + key;
-    msgBtn.setAttribute('aria-label', d.name + '-க்கு மெசேஜ் அனுப்பு');
     msgBtn.addEventListener('click', function(){ sendMessage(key, d.name); });
 
     var callBtn = el('button','act-btn call-btn','📞 கால் செய்');
     callBtn.type = 'button';
     callBtn.id = 'call-' + key;
-    callBtn.setAttribute('aria-label', d.name + '-க்கு கால் செய்');
     callBtn.setAttribute('aria-disabled','true');
     callBtn.addEventListener('click', function(){ makeCall(key, d.name); });
 
@@ -1872,6 +1973,101 @@ function authSuccess(mode, method){
 
 /* ---------- Donor dashboard ---------- */
 var myRecords = [];
+/* 1. டோனர் பதிவு செய்யும் பங்க்ஷன் (டூப்ளிகேட் தடுப்புடன்) */
+function addDonorRecord(){
+  clearErrors(['dNm','dLoc','dBlood','dMob']);
+  var nm  = scr('dNm').value.trim();
+  var loc = scr('dLoc').value.trim();
+  var bl  = scr('dBlood').value;
+  var mob = onlyDigits(scr('dMob').value);
+  
+  var mobRegex = /^[6-9]\d{9}$/;
+  var ok = true;
+  
+  if(!nm){ setFieldError('dNm','பெயரை உள்ளிடவும்'); ok = false; }
+  if(!loc){ setFieldError('dLoc','ஊரை உள்ளிடவும்'); ok = false; }
+  if(!bl){ setFieldError('dBlood','பிளட் குரூப் தேர்ந்தெடுக்கவும்'); ok = false; }
+  
+  if (!mobRegex.test(mob)) { 
+    setFieldError('dMob', 'சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்'); 
+    ok = false; 
+  }
+  
+  if(!ok) return;
+
+  // டூப்ளிகேட் தடுப்பு: டேட்டாபேஸில் இந்த எண் ஏற்கனவே உள்ளதா என்று பார்க்கவும்
+  window.fbDB.ref('records').orderByChild('mobile').equalTo('+91' + mob)
+    .once('value').then(function(snapshot) {
+      if (snapshot.exists()) {
+        setFieldError('dMob', 'இந்த மொபைல் எண் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது!');
+        showToast('பதிவு செய்ய முடியவில்லை: எண் ஏற்கனவே உள்ளது ⚠️', true);
+      } else {
+        // எண் இல்லை என்றால் மட்டும் சேமிக்கவும்
+        saveDonorToDB(nm, loc, bl, mob);
+      }
+    }).catch(function(err){
+        showToast('பிழை ஏற்பட்டது, மீண்டும் முயற்சிக்கவும்', true);
+    });
+}
+
+/* 2. உண்மையான சேமிப்பு பங்க்ஷன் (Helper Function) */
+function saveDonorToDB(nm, loc, bl, mob) {
+  myRecords.push({name:nm, loc:loc, blood:bl, mob:mob});
+  
+  var isActive = scr('activeToggle') ? scr('activeToggle').checked : true;
+  dbWrite('records', { 
+    name: nm, loc: loc, blood: bl, mobile: '+91' + mob,
+    active: isActive, ownerUid: (fbUser ? fbUser.uid : '') 
+  });
+  
+  scr('dNm').value = ''; scr('dLoc').value = ''; scr('dBlood').value = ''; scr('dMob').value = '';
+  scr('curMobLabel').textContent = 'தற்போது: +91 ' + mob;
+  
+  renderMyRecords();
+  saveState();
+  showToast('பதிவு வெற்றிகரமாக சேர்க்கப்பட்டது ✅');
+}
+
+/* 3. வரிசைப்படுத்தப்பட்ட UI (பதிவு படிவத்தை மறைத்தல்) */
+function renderMyRecords(){
+  var box = scr('myDonorRecords');
+  var form = scr('donorRegistrationForm');
+  box.textContent = '';
+  
+  if(myRecords.length > 0) {
+      if(form) form.style.display = 'none';
+  } else {
+      if(form) form.style.display = 'block';
+  }
+
+  myRecords.forEach(function(d){
+    var card = el('div','donor-card');
+    var top = el('div','donor-top');
+    top.appendChild(el('div','donor-avatar', d.name.charAt(0)));
+
+    var info = el('div','donor-info');
+    var nm = el('div','nm', d.name);
+    nm.appendChild(el('span','badge-mine','என்'));
+    info.appendChild(nm);
+    info.appendChild(el('div','loc','📍 ' + d.loc + ' · 📱 +91 ' + d.mob));
+    top.appendChild(info);
+    top.appendChild(el('div','blood-tag', d.blood));
+    card.appendChild(top);
+    box.appendChild(card);
+  });
+
+  var banner = scr('donorStatusBanner');
+  if(banner) box.appendChild(banner);
+
+  if(myRecords.length === 0){
+    var em = el('div','empty');
+    em.appendChild(el('div','ei','🩸'));
+    em.appendChild(el('p', null, 'இன்னும் பதிவுகள் இல்லை. விவரங்களைச் சேர்க்கவும்.'));
+    box.appendChild(em);
+  }
+}
+
+/* 3. ஸ்டேட்டஸ் மாற்றுதல் - எந்த மாற்றமும் இல்லை, அப்படியே இருக்கலாம் */
 function toggleActive(elm, silent){
   var banner = scr('donorStatusBanner');
   if(elm.checked){
@@ -1885,81 +2081,38 @@ function toggleActive(elm, silent){
   }
   saveState();
 }
-function addDonorRecord(){
-  clearErrors(['dNm','dLoc','dBlood','dMob']);
-  var nm  = scr('dNm').value.trim();
-  var loc = scr('dLoc').value.trim();
-  var bl  = scr('dBlood').value;
-  var mob = onlyDigits(scr('dMob').value);
-  var ok = true;
-  if(!nm){ setFieldError('dNm','பெயரை உள்ளிடவும்'); ok = false; }
-  if(!loc){ setFieldError('dLoc','ஊரை உள்ளிடவும்'); ok = false; }
-  if(!bl){ setFieldError('dBlood','பிளட் குரூப் தேர்ந்தெடுக்கவும்'); ok = false; }
-  if (mob.length < 10 || mob.length > 13) { 
-    setFieldError('rcvMob', 'சரியான மொபைல் எண்ணை உள்ளிடவும்'); 
-    ok = false; 
-}
-  if(!ok) return;
-
-  myRecords.push({name:nm, loc:loc, blood:bl, mob:mob});
-  /* Persist to Realtime Database — this donor becomes searchable by receivers.
-     'active' reflects the dashboard On/Off toggle. */
-  var isActive = scr('activeToggle') ? scr('activeToggle').checked : true;
-  dbWrite('records', { name: nm, loc: loc, blood: bl, mobile: '+91' + mob,
-    active: isActive, ownerUid: (fbUser ? fbUser.uid : '') });
-  scr('dNm').value = ''; scr('dLoc').value = ''; scr('dBlood').value = ''; scr('dMob').value = '';
-  scr('curMobLabel').textContent = 'தற்போது: +91 ' + mob;
-  renderMyRecords();
-  saveState();
-  showToast('பதிவு வெற்றிகரமாக சேர்க்கப்பட்டது ✅ (Firebase-ல் சேமிக்கப்பட்டது)');
-}
-/* Render my records with SAFE DOM APIs. */
-function renderMyRecords(){
-  var box = scr('myDonorRecords');
-  box.textContent = '';
-  if(myRecords.length === 0){
-    var em = el('div','empty');
-    em.appendChild(el('div','ei','🩸'));
-    em.appendChild(el('p', null, 'இன்னும் பதிவுகள் இல்லை. மேலே உங்கள் விவரங்களை சேர்க்கவும்.'));
-    box.appendChild(em);
-    return;
-  }
-  myRecords.forEach(function(d){
-    var card = el('div','donor-card');
-    var top = el('div','donor-top');
-    top.appendChild(el('div','donor-avatar', d.name.charAt(0)));
-
-    var info = el('div','donor-info');
-    var nm = el('div','nm', d.name);
-    nm.appendChild(el('span','badge-mine','என்'));
-    info.appendChild(nm);
-    info.appendChild(el('div','loc','📍 ' + d.loc + ' · 📱 +91 ' + d.mob));
-    top.appendChild(info);
-    top.appendChild(el('div','blood-tag', d.blood));
-
-    card.appendChild(top);
-    box.appendChild(card);
-  });
-}
-
 /* ---------- Settings: mobile update & delete ---------- */
+// 1. மொபைல் அப்டேட் விண்டோ
 function openMobileUpdate(){
   var m = scr('modal');
   m.textContent = '';
+  
+  // பேக் பட்டன் (இது பாப்-அப்பை மூடிவிடும்)
+  var backBtn = el('button', 'ghost-btn', '← பின் செல்');
+  backBtn.type = 'button';
+  backBtn.onclick = closeModal; 
+  m.appendChild(backBtn);
+
   m.appendChild(el('div','grab'));
   m.appendChild(el('h3', null, 'மொபைல் நம்பர் அப்டேட்'));
-  m.appendChild(el('p', null, 'புதிய மொபைல் நம்பரை உள்ளிடவும். OTP மூலம் சரிபார்க்கப்படும்.'));
+  m.appendChild(el('p', null, 'புதிய மொபைல் நம்பரை உள்ளிடவும்.'));
 
   var field = el('div','field');
   field.appendChild(el('label', null, 'புதிய மொபைல் நம்பர்'));
+  
   var wrap = el('div','with-icon');
   var pre = el('span','pre','📱'); pre.setAttribute('aria-hidden','true');
+  
   var inp = document.createElement('input');
   inp.id = 'newMob'; inp.type = 'tel'; inp.inputMode = 'numeric'; inp.maxLength = 14;
   inp.placeholder = 'புதிய நம்பர்';
+  
   wrap.appendChild(pre); wrap.appendChild(inp);
   field.appendChild(wrap);
-  var errP = el('p','field-err'); errP.id = 'newMob-err'; errP.setAttribute('role','alert');
+  
+  var errP = el('p','field-err'); 
+  errP.id = 'newMob-err'; 
+  errP.setAttribute('role','alert');
   field.appendChild(errP);
   m.appendChild(field);
 
@@ -1967,16 +2120,27 @@ function openMobileUpdate(){
   btn.type = 'button';
   btn.addEventListener('click', doMobileUpdate);
   m.appendChild(btn);
+  
   openModal();
   setTimeout(function(){ inp.focus(); }, 200);
 }
+
+// 2. அப்டேட் லாஜிக் (Regex மற்றும் பிழை சரிபார்ப்புடன்)
 function doMobileUpdate(){
   clearFieldError('newMob');
-  var v = onlyDigits(scr('newMob').value);
- if (mob.length < 10 || mob.length > 13) { 
-    setFieldError('rcvMob', 'சரியான மொபைல் எண்ணை உள்ளிடவும்'); 
-    ok = false; 
-}
+  var inputVal = scr('newMob').value;
+  var v = onlyDigits(inputVal); // எண்களை மட்டும் வடிகட்டுகிறது
+  
+  // Regex: 10 இலக்கம் இருக்கிறதா என்று பார்க்கும் (இந்திய மொபைல் எண்)
+  var mobRegex = /^[6-9]\d{9}$/;
+  
+  if (!mobRegex.test(v)) { 
+      // பிழை இருந்தால் இங்கே காட்டும்
+      setFieldError('newMob', 'சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்');
+      return; 
+  }
+  
+  // எல்லாம் சரியாக இருந்தால் அப்டேட் செய்யவும்
   scr('curMobLabel').textContent = 'தற்போது: +91 ' + v;
   closeModal();
   showToast('மொபைல் நம்பர் அப்டேட் ஆனது ✅');
