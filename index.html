@@ -908,7 +908,7 @@ var fbUser  = window.fbUser || null;
 
 /* When the async module finishes, refresh the mirrored globals so any
    auth/db call made afterwards uses the live Firebase instances. */
-document.addEventListener('firebase-ready',  () {
+document.addEventListener('firebase-ready',  () => {
   fbReady = !!window.fbReady;
   fbAuth  = window.fbAuth || null;
   fbDB    = window.fbDB   || null;
