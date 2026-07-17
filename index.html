@@ -849,8 +849,6 @@
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
   import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app-check.js";
 
-  window.RecaptchaVerifier = RecaptchaVerifier;
-
  const firebaseConfig = {
   apiKey: "AIzaSyCgek5jmAeF_HBe1YD-mO8eLXdAL6q-wfU",
   authDomain: "uyir-blood-app.firebaseapp.com",
@@ -895,6 +893,19 @@ window.fbRef = ref; // 'ref' பங்க்ஷனையும் சேர்�
 
   console.log("Firebase Modular SDK initialized!");
   document.dispatchEvent(new Event('firebase-ready'));
+
+  // இந்த பங்க்ஷனை அங்கே சேர்த்துக் கொள்ளுங்கள்
+  window.ensureRecaptcha = function() {
+      if (window.recaptchaVerifier) {
+          window.recaptchaVerifier.clear();
+      }
+      
+      // இங்கு window.fbAuth மற்றும் window.RecaptchaVerifier ஆகியவற்றைப் பயன்படுத்துகிறோம்
+      window.recaptchaVerifier = new RecaptchaVerifier(window.fbAuth, 'recaptcha-container', {
+          'size': 'normal'
+      });
+      return window.recaptchaVerifier;
+  };
 </script>
  
 <script>
@@ -938,24 +949,7 @@ document.addEventListener('firebase-ready',  () => {
             console.error("தரவை எடுக்க முடியவில்லை:", err);
         });
   }
- /* --- RECAPTCHA HELPER (Modular SDK compliant) --- */
-/* --- RECAPTCHA HELPER (சரி செய்யப்பட்டது) --- */
-function ensureRecaptcha() {
-    // 1. பிழையான ஸ்பெல்லிங்கை சரி செய்துள்ளேன்
-    if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-    }
 
-    // 2. 'auth' என்பதற்கு பதில் 'window.fbAuth' பயன்படுத்தவும் 
-    // (ஏனெனில் இது Module அல்ல, சாதாரண script)
-    // 3. 'window.RecaptchaVerifier' பயன்படுத்தவும்
-    window.recaptchaVerifier = new window.RecaptchaVerifier(window.fbAuth, 'recaptcha-container', {
-        'size': 'normal'
-    });
-
-    return window.recaptchaVerifier;
-}
- 
 /* ---- DB helpers: write registration / records / events ---- */
 function dbWrite(path, data) {
   if (!window.fbReady || !window.fbDbPush) return Promise.resolve(false);
