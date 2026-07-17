@@ -915,7 +915,7 @@ document.addEventListener('firebase-ready',  () => {
   fbUser  = window.fbUser || null;
 });
 
-  loadMyRecordsFromDB() {
+  loadMyRecordsFromDB() => {
     if (!fbDB || !fbUser) return;
 
     fbDB.ref('records')
