@@ -849,7 +849,7 @@
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
   import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app-check.js";
 
-  window.RecaptchaVerifire = RecaptchaVerifier;
+  window.RecaptchaVerifier = RecaptchaVerifier;
 
  const firebaseConfig = {
   apiKey: "AIzaSyCgek5jmAeF_HBe1YD-mO8eLXdAL6q-wfU",
@@ -939,11 +939,17 @@ document.addEventListener('firebase-ready',  () => {
         });
   }
  /* --- RECAPTCHA HELPER (Modular SDK compliant) --- */
+/* --- RECAPTCHA HELPER (சரி செய்யப்பட்டது) --- */
 function ensureRecaptcha() {
+    // 1. பிழையான ஸ்பெல்லிங்கை சரி செய்துள்ளேன்
     if (window.recaptchaVerifier) {
-     window.recapchaVerifier.clear();
- }
-    window.recaptchaVerifier = new window.RecaptchaVerifier(auth,'recaptcha-container', {
+        window.recaptchaVerifier.clear();
+    }
+
+    // 2. 'auth' என்பதற்கு பதில் 'window.fbAuth' பயன்படுத்தவும் 
+    // (ஏனெனில் இது Module அல்ல, சாதாரண script)
+    // 3. 'window.RecaptchaVerifier' பயன்படுத்தவும்
+    window.recaptchaVerifier = new window.RecaptchaVerifier(window.fbAuth, 'recaptcha-container', {
         'size': 'normal'
     });
 
