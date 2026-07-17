@@ -152,8 +152,7 @@
     z-index: 1; 
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9); 
     color: #fff;
-}
- 
+ }
 
   .home-actions{flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:32px 26px;}
   .big-btn{
@@ -939,14 +938,13 @@ document.addEventListener('firebase-ready',  () => {
  /* --- RECAPTCHA HELPER (Modular SDK compliant) --- */
 function ensureRecaptcha() {
   if (window.recaptchaVerifier) {
-     try { window.recaptchaVerifier.clear(); } catch(e) {}
+    try { window.recaptchaVerifier.clear(); } catch(e) {}
   }
   
-  // window.RecaptchaVerifier என்பது மாடியூல் ஸ்கிரிப்ட்டில் இருந்து நாம் எக்ஸ்போர்ட் செய்தது
-  // auth என்பது window.fbAuth
   window.recaptchaVerifier = new window.RecaptchaVerifier(window.fbAuth, 'recaptcha-container', {
     'size': 'normal',
-    'callback': function(response) { console.log("reCAPTCHA verified!"); }
+    'callback': (response) => { console.log("reCAPTCHA verified!"); },
+    'expired-callback': () => { window.recaptchaVerifier.render(); }
   });
   
   window.recaptchaVerifier.render();
@@ -1732,29 +1730,7 @@ function registerMobile(){ startMobileOtp('register'); }
  * Daily OTP limit + password strength are enforced.                          */
  
  // இந்த பங்க்ஷனைப் புதிதாகச் சேர்த்துவிடுங்கள்
-function ensureRecaptcha() {
-    // 1. பழைய verifier இருந்தால் நீக்கவும்
-    if (window.recaptchaVerifier) {
-        try { window.recaptchaVerifier.clear(); } catch (e) {}
-    }
-
-    // 2. முக்கிய மாற்றம்: 'firebase.auth.RecaptchaVerifier' என்பதற்கு பதில் 
-    // உங்கள் மாடியூல் ஸ்கிரிப்ட்டில் இருந்து வந்த 'window.RecaptchaVerifier'-ஐ பயன்படுத்தவும்
-    // மற்றும் முதல் பாராமீட்டராக 'window.fbAuth'-ஐ கொடுக்கவும்.
-    
-    window.recaptchaVerifier = new window.RecaptchaVerifier(window.fbAuth, 'recaptcha-container', {
-        'size': 'normal',
-        'callback': (response) => { 
-            console.log("reCAPTCHA verified!"); 
-        },
-        'expired-callback': () => { 
-            window.recaptchaVerifier.render(); 
-        }
-    });
-
-    window.recaptchaVerifier.render();
-    return window.recaptchaVerifier;
-}
+var verifier = ensureRecaptcha();
  
 function startOtp(mode){
  // இந்த பகுதியை மட்டும் அப்படியே உங்கள் பங்க்ஷனின் ஆரம்பத்தில் போடவும்
