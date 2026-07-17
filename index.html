@@ -931,11 +931,11 @@ document.addEventListener('firebase-ready',  () => {
                 renderMyRecords();
             }
         });
- }
+
         .catch(function(err) {
             console.error("தரவை எடுக்க முடியவில்லை:", err);
         });
-
+  }
  /* --- RECAPTCHA HELPER (Modular SDK compliant) --- */
 function ensureRecaptcha() {
   if (window.recaptchaVerifier) {
