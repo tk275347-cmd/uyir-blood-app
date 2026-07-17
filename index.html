@@ -849,6 +849,8 @@
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-database.js";
   import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app-check.js";
 
+  window.RecaptchaVerifire = RecaptchaVerifier;
+
  const firebaseConfig = {
   apiKey: "AIzaSyCgek5jmAeF_HBe1YD-mO8eLXdAL6q-wfU",
   authDomain: "uyir-blood-app.firebaseapp.com",
@@ -939,14 +941,9 @@ document.addEventListener('firebase-ready',  () => {
  /* --- RECAPTCHA HELPER (Modular SDK compliant) --- */
 function ensureRecaptcha() {
     if (window.recaptchaVerifier) {
-     try {
-        window.recaptchaVerifier.clear();
-    } catch(e) {
-       console.log("error clearing", e);
-     }
-  }
-
-    window.recaptchaVerifier = new RecaptchaVerifier(auth,'recaptcha-container', {
+     window.recapchaVerifier.clear();
+ }
+    window.recaptchaVerifier = new window.RecaptchaVerifier(auth,'recaptcha-container', {
         'size': 'normal'
     });
 
