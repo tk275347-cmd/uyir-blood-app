@@ -937,18 +937,15 @@ document.addEventListener('firebase-ready',  () => {
   }
  /* --- RECAPTCHA HELPER (Modular SDK compliant) --- */
 function ensureRecaptcha() {
-  if (window.recaptchaVerifier) {
-    try { window.recaptchaVerifier.clear(); } catch(e) {}
-  }
-  
-  window.recaptchaVerifier = new window.RecaptchaVerifier(window.fbAuth, 'recaptcha-container', {
-    'size': 'normal',
-    'callback': (response) => { console.log("reCAPTCHA verified!"); },
-    'expired-callback': () => { window.recaptchaVerifier.render(); }
-  });
-  
-  window.recaptchaVerifier.render();
-  return window.recaptchaVerifier;
+    if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+    }
+
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+        'size': 'normal'
+    });
+
+    return window.recaptchaVerifier;
 }
  
 /* ---- DB helpers: write registration / records / events ---- */
