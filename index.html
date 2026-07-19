@@ -781,6 +781,35 @@
             <button class="primary-btn" type="submit">＋ பதிவை சேர்</button>
           </form>
         </div>
+       /* பட்டன்களை அடுக்கும் பெட்டி */
+.btn-container {
+    display: flex;
+    justify-content: flex-end; /* வலது பக்கம் தள்ளுவதற்கு */
+    gap: 10px;               /* பட்டன்களுக்கு நடுவில் இடைவெளி */
+    margin-top: 15px;
+}
+
+/* எடிட் பட்டன் ஸ்டைல் */
+.edit-btn {
+    background-color: #e3f2fd; /* வெளிர் நீலம் */
+    color: #1976d2;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+/* கேன்சல் பட்டன் ஸ்டைல் */
+.cancel-btn {
+    background-color: #ffebee; /* வெளிர் சிவப்பு */
+    color: #d32f2f;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+}
 
         <div class="section-title">என் பதிவுகள்</div>
         <div id="myDonorRecords" aria-live="polite"></div>
@@ -969,6 +998,16 @@ function dbWriteUser(subtree, uid, data) {
       Object.assign({ ts: window.fbServerTimestamp() }, data))
       .then(function () { return true; })
       .catch(function (err) { console.warn('DB write failed:', err && err.message); return false; });
+  } catch (e) { return Promise.resolve(false); }
+}
+ function dbUpdate(path, key, data) {
+  // path: 'records', key: அந்த ரெக்கார்டின் unique ID
+  if (!window.fbReady || !window.fbDbSet) return Promise.resolve(false);
+  try {
+    // குறிப்பிட்ட Key-ல் உள்ள டேட்டாவை மட்டும் அப்டேட் செய்கிறது
+    return window.fbDbSet(path + '/' + key, data)
+      .then(function () { return true; })
+      .catch(function (err) { console.warn('DB update failed:', err && err.message); return false; });
   } catch (e) { return Promise.resolve(false); }
 }
 'use strict';
@@ -1215,8 +1254,6 @@ function back(fallback) {
         go(fallback);
     }
 }
- 
-
  
 /* Move keyboard focus to the screen heading for a11y after navigation */
 function focusFirst(screenEl){
@@ -2001,20 +2038,53 @@ function addDonorRecord(){
 
 /* 2. உண்மையான சேமிப்பு பங்க்ஷன் (Helper Function) */
 function saveDonorToDB(nm, loc, bl, mob) {
-  myRecords.push({name:nm, loc:loc, blood:bl, mob:mob});
-  
-  var isActive = scr('activeToggle') ? scr('activeToggle').checked : true;
-  dbWrite('records', { 
-    name: nm, loc: loc, blood: bl, mobile: '+91' + mob,
-    active: isActive, ownerUid: (fbUser ? fbUser.uid : '') 
-  });
-  
-  scr('dNm').value = ''; scr('dLoc').value = ''; scr('dBlood').value = ''; scr('dMob').value = '';
-  scr('curMobLabel').textContent = 'தற்போது: +91 ' + mob;
-  
-  renderMyRecords();
-  saveState();
-  showToast('பதிவு வெற்றிகரமாக சேர்க்கப்பட்டது ✅');
+    // 1. திருத்தம் (Edit) செய்கிறோமா என்று செக் செய்கிறோம்
+    if (window.isEditing) {
+        // எடிட் மோடு: குறிப்பிட்ட பதிவை மட்டும் அப்டேட் செய்கிறோம்
+        // window.editingMob என்பது எடிட் பட்டன் மூலம் சேமிக்கப்பட்ட பழைய நம்பர்
+        var updates = {
+            name: nm,
+            loc: loc,
+            blood: bl
+        };
+        
+        // உங்கள் Firebase அப்டேட் முறை
+        var ref = window.fbRef(window.fbDB, 'records/' + window.editingMob);
+        window.fbUpdate(ref, updates);
+        
+        showToast('விவரங்கள் திருத்தப்பட்டன! ✅');
+        window.isEditing = false; // திருத்தம் முடிந்ததும் நிலையை மாற்றுகிறோம்
+    } 
+    // 2. புதிய பதிவு (New Register) செய்கிறோம்
+    else {
+        myRecords.push({name:nm, loc:loc, blood:bl, mob:mob});
+        var isActive = scr('activeToggle') ? scr('activeToggle').checked : true;
+        
+        dbWrite('records', { 
+            name: nm, loc: loc, blood: bl, mobile: '+91' + mob,
+            active: isActive, ownerUid: (fbUser ? fbUser.uid : '') 
+        });
+        showToast('பதிவு வெற்றிகரமாக சேர்க்கப்பட்டது ✅');
+    }
+
+    // 3. படிவத்தைச் சுத்தம் செய்தல் மற்றும் மறைத்தல் (எல்லாவற்றுக்கும் பொதுவானது)
+    scr('dNm').value = ''; 
+    scr('dLoc').value = ''; 
+    scr('dBlood').value = ''; 
+    scr('dMob').value = '';
+    
+    // மொபைல் நம்பர் பாக்ஸை மீண்டும் எடிட் செய்ய அனுமதிக்கிறோம்
+    scr('dMob').readOnly = false; 
+    
+    scr('curMobLabel').textContent = 'தற்போது: +91 ' + mob;
+    
+    // ரெக்கார்டுகளை மீண்டும் ரெண்டர் செய்கிறோம்
+    renderMyRecords();
+    saveState();
+    
+    // ஃபார்மை மறைக்கிறோம்
+    var form = scr('donorRegistrationForm'); 
+    if(form) form.style.display = 'none';
 }
 
 /* 3. வரிசைப்படுத்தப்பட்ட UI (பதிவு படிவத்தை மறைத்தல்) */
@@ -2040,8 +2110,35 @@ function renderMyRecords(){
     info.appendChild(nm);
     info.appendChild(el('div','loc','📍 ' + d.loc + ' · 📱 +91 ' + d.mob));
     top.appendChild(info);
+   // --- எடிட் பட்டன் மாற்றம் தொடக்கம் ---
+    var editBtn = el('div', 'edit-btn', '✏️ எடிட்'); // அல்லது ஒரு ஐகான்
+    editBtn.onclick = function() {
+        // 1. ஃபார்மை மீண்டும் காட்டவும்
+        var form = scr('donorRegistrationForm');
+        if(form) form.style.display = 'block';
+        
+        // 2. ஃபார்மில் பழைய தகவல்களை நிரப்பவும் (Auto-fill)
+        scr('dNm').value = d.name;
+        scr('dLoc').value = d.loc;
+        scr('dBlood').value = d.blood;
+        scr('dMob').value = d.mob;
+     scr('dMob').readOnly = true;
+        
+        // 3. இது ஒரு 'எடிட்' வேலை என்பதை உறுதிப்படுத்த ஒரு வேரியபிளை செட் செய்யவும்
+        window.isEditing = true; 
+        window.editingMob = d.mob; // எந்த நம்பரை மாற்றப்போகிறோம் என்று தெரிந்துகொள்ள
+    };
+   var cancelBtn =el('div','cancel-btn', '❌ கேன்சல்');
+   cancelBtn.onclick = function() {
+    cancelEdit();
+ }; 
+    // --- எடிட் பட்டன் மாற்றம் முடிவு ---
     top.appendChild(el('div','blood-tag', d.blood));
     card.appendChild(top);
+   var btnContainer =el('div','btn-container');
+    btnContainer.appendChild(editBtn); 
+   btnContainer.appendChild(cancelBtn); 
+     card.appendChild(btnContainer);
     box.appendChild(card);
   });
 
@@ -2476,6 +2573,27 @@ function openPolicy(type, e){
   btn.addEventListener('click', function(){ closeModal(); });
   m.appendChild(btn);
   openModal();
+}
+
+ function cancelEdit() {
+    // 1. எடிட் மோடை ஆஃப் செய்கிறோம்
+    window.isEditing = false;
+    scr('donorRegistrationForm').style.display = 'none';
+    // 2. படிவத்தில் உள்ள தகவல்களை அழிக்கிறோம்
+    scr('dNm').value = ''; 
+    scr('dLoc').value = ''; 
+    scr('dBlood').value = ''; 
+    scr('dMob').value = '';
+    
+    // 3. மொபைல் நம்பரை மீண்டும் எடிட் செய்ய அனுமதிக்கிறோம் (readOnly-யை நீக்குகிறோம்)
+    scr('dMob').readOnly = false;
+    
+    // 4. படிவத்தை மறைக்கிறோம்
+    var form = scr('donorRegistrationForm');
+    if(form) form.style.display = 'none';
+    
+    // 5. ஒருவேளை பயனர் பட்டனை அழுத்தினால் அதை உறுதிப்படுத்த (Optional)
+    showToast('திருத்தம் ரத்து செய்யப்பட்டது ❌');
 }
 
 /* ---------- Modal helpers (with Esc-to-close a11y) ---------- */
