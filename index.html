@@ -251,6 +251,35 @@
   .call-btn{background:#f3f4f6;color:#9ca3af;border:1.5px solid var(--line);cursor:not-allowed;}
   .call-btn.enabled{background:var(--green);color:#fff;border-color:var(--green);cursor:pointer;box-shadow:0 4px 12px rgba(26,158,87,.3);}
   .locknote{font-size:11px;color:var(--muted);text-align:center;margin-top:-2px;}
+   /* பட்டன்களை அடுக்கும் பெட்டி */
+.btn-container {
+    display: flex;
+    justify-content: flex-end; /* வலது பக்கம் தள்ளுவதற்கு */
+    gap: 10px;               /* பட்டன்களுக்கு நடுவில் இடைவெளி */
+    margin-top: 15px;
+}
+
+/* எடிட் பட்டன் ஸ்டைல் */
+.edit-btn {
+    background-color: #e3f2fd; /* வெளிர் நீலம் */
+    color: #1976d2;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+/* கேன்சல் பட்டன் ஸ்டைல் */
+.cancel-btn {
+    background-color: #ffebee; /* வெளிர் சிவப்பு */
+    color: #d32f2f;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+}
 
   /* Toggle */
   .toggle-card{background:#fff;border-radius:18px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.05);
@@ -781,36 +810,7 @@
             <button class="primary-btn" type="submit">＋ பதிவை சேர்</button>
           </form>
         </div>
-       /* பட்டன்களை அடுக்கும் பெட்டி */
-.btn-container {
-    display: flex;
-    justify-content: flex-end; /* வலது பக்கம் தள்ளுவதற்கு */
-    gap: 10px;               /* பட்டன்களுக்கு நடுவில் இடைவெளி */
-    margin-top: 15px;
-}
-
-/* எடிட் பட்டன் ஸ்டைல் */
-.edit-btn {
-    background-color: #e3f2fd; /* வெளிர் நீலம் */
-    color: #1976d2;
-    padding: 6px 12px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: bold;
-}
-
-/* கேன்சல் பட்டன் ஸ்டைல் */
-.cancel-btn {
-    background-color: #ffebee; /* வெளிர் சிவப்பு */
-    color: #d32f2f;
-    padding: 6px 12px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: bold;
-}
-
+    
         <div class="section-title">என் பதிவுகள்</div>
         <div id="myDonorRecords" aria-live="polite"></div>
       </div>
@@ -2336,7 +2336,7 @@ function launchUpi(amount){
     // 2. Fallback
     setTimeout(function(){ 
       try { window.location.href = upi; } catch(e){} 
-    }, 1000);
+    }, 5000);
   } else {
     window.location.href = upi;
   }
@@ -2373,7 +2373,7 @@ function openDonateModal(){
   m.appendChild(el('h3', null, '💝 நன்கொடை செலுத்து'));
 
   var lead = el('p','donate-lead',
-    'உங்கள் நன்கொடை உயிர்காக்கும் இரத்த தானத்திற்கு உதவும். தொகையைத் தேர்வு செய்து UPI ஆப் மூலம் செலுத்துங்கள்.');
+    'only for app maintanence.');
   m.appendChild(lead);
 
   /* Payee row */
@@ -2497,7 +2497,7 @@ function showDesktopPay(amt){
 /* ================= /UPI Donation ================= */
 
 /* ================= Share App (QR code) ================= */
-var APP_SHARE_URL = 'https://uyir-blood-app.web.app';
+var APP_SHARE_URL = 'https://tk275347-cmd.github.io/uyir-blood-app/';
 
 function openShareApp(){
   var m = scr('modal');
@@ -2509,17 +2509,17 @@ function openShareApp(){
 
   var qrWrap = el('div','share-qr-wrap');
   var qrImg = document.createElement('img');
-  qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' + encodeURIComponent( "https://uyir-blood-app.web.app" );
+  qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' + encodeURIComponent( "https://tk275347-cmd.github.io/uyir-blood-app/" );
   qrImg.alt = 'ஆப் QR கோடு';
   qrImg.loading = 'lazy';
   qrWrap.appendChild(qrImg);
   m.appendChild(qrWrap);
 
-  m.appendChild(el('div','share-link-box', "https://uyir-blood-app.web.app" ));
+  m.appendChild(el('div','share-link-box', "https://tk275347-cmd.github.io/uyir-blood-app/" ));
 
   var copyBtn = el('button','primary-btn','📋 லிங்க் நகலெடு');
   copyBtn.type = 'button';
-  copyBtn.addEventListener('click', function(){ copyText( "https://uyir-blood-app.web.app", '✅ லிங்க் நகலெடுக்கப்பட்டது' );
+  copyBtn.addEventListener('click', function(){ copyText( "https://tk275347-cmd.github.io/uyir-blood-app/", '✅ லிங்க் நகலெடுக்கப்பட்டது' );
                                                          });
   m.appendChild(copyBtn);
 
@@ -2527,7 +2527,7 @@ function openShareApp(){
     var shareBtn = el('button','ghost-btn','📤 பகிர்');
     shareBtn.type = 'button';
     shareBtn.addEventListener('click', function(){
-      navigator.share({ title: 'உயிர்காக்கும் இரத்தம் தானம்', text: 'இந்த இரத்த தான ஆப்பை பயன்படுத்துங்கள்:', url: 'https://uyir-blood-app.web.app' })
+      navigator.share({ title: 'உயிர்காக்கும் இரத்தம் தானம்', text: 'இந்த இரத்த தான ஆப்பை பயன்படுத்துங்கள்:', url: 'https://tk275347-cmd.github.io/uyir-blood-app/' })
         .catch(function(){ /* user cancelled — ignore */ });
     });
     m.appendChild(shareBtn);
