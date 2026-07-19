@@ -2051,6 +2051,9 @@ function saveDonorToDB(nm, loc, bl, mob) {
         // உங்கள் Firebase அப்டேட் முறை
         var ref = window.fbRef(window.fbDB, 'records/' + window.editingMob);
         window.fbUpdate(ref, updates);
+     // ஃபார்மை மறைக்கிறோம்
+    var form = scr('donorRegistrationForm'); 
+    if(form) form.style.display = 'none';
         
         showToast('விவரங்கள் திருத்தப்பட்டன! ✅');
         window.isEditing = false; // திருத்தம் முடிந்ததும் நிலையை மாற்றுகிறோம்
