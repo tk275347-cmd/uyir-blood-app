@@ -2037,58 +2037,6 @@ function addDonorRecord(){
 }
 
 /* 2. உண்மையான சேமிப்பு பங்க்ஷன் (Helper Function) */
-function saveDonorToDB(nm, loc, bl, mob) {
-    // 1. திருத்தம் (Edit) செய்கிறோமா என்று செக் செய்கிறோம்
-    if (window.isEditing) {
-        // எடிட் மோடு: குறிப்பிட்ட பதிவை மட்டும் அப்டேட் செய்கிறோம்
-        // window.editingMob என்பது எடிட் பட்டன் மூலம் சேமிக்கப்பட்ட பழைய நம்பர்
-        var updates = {
-            name: nm,
-            loc: loc,
-            blood: bl
-        };
-        
-        // உங்கள் Firebase அப்டேட் முறை
-        var ref = window.fbRef(window.fbDB, 'records/' + window.editingMob);
-        window.fbUpdate(ref, updates);
-     // ஃபார்மை மறைக்கிறோம்
-    var form = scr('donorRegistrationForm'); 
-    if(form) form.style.display = 'none';
-        
-        showToast('விவரங்கள் திருத்தப்பட்டன! ✅');
-        window.isEditing = false; // திருத்தம் முடிந்ததும் நிலையை மாற்றுகிறோம்
-    } 
-    // 2. புதிய பதிவு (New Register) செய்கிறோம்
-    else {
-        myRecords.push({name:nm, loc:loc, blood:bl, mob:mob});
-        var isActive = scr('activeToggle') ? scr('activeToggle').checked : true;
-        
-        dbWrite('records', { 
-            name: nm, loc: loc, blood: bl, mobile: '+91' + mob,
-            active: isActive, ownerUid: (fbUser ? fbUser.uid : '') 
-        });
-        showToast('பதிவு வெற்றிகரமாக சேர்க்கப்பட்டது ✅');
-    }
-
-    // 3. படிவத்தைச் சுத்தம் செய்தல் மற்றும் மறைத்தல் (எல்லாவற்றுக்கும் பொதுவானது)
-    scr('dNm').value = ''; 
-    scr('dLoc').value = ''; 
-    scr('dBlood').value = ''; 
-    scr('dMob').value = '';
-    
-    // மொபைல் நம்பர் பாக்ஸை மீண்டும் எடிட் செய்ய அனுமதிக்கிறோம்
-    scr('dMob').readOnly = false; 
-    
-    scr('curMobLabel').textContent = 'தற்போது: +91 ' + mob;
-    
-    // ரெக்கார்டுகளை மீண்டும் ரெண்டர் செய்கிறோம்
-    renderMyRecords();
-    saveState();
-    
-    // ஃபார்மை மறைக்கிறோம்
-    var form = scr('donorRegistrationForm'); 
-    if(form) form.style.display = 'none';
-}
 
 /* 3. வரிசைப்படுத்தப்பட்ட UI (பதிவு படிவத்தை மறைத்தல்) */
 function renderMyRecords(){
@@ -2115,7 +2063,67 @@ function renderMyRecords(){
     top.appendChild(info);
    // --- எடிட் பட்டன் மாற்றம் தொடக்கம் ---
     var editBtn = el('div', 'edit-btn', '✏️ எடிட்'); // அல்லது ஒரு ஐகான்
-    editBtn.onclick = function() {
+    editB/* 1. புதிய மற்றும் திருத்தப்பட்ட பதிவுகளுக்கான பொதுவான சேமிப்பு பங்க்ஷன் */
+function saveDonorToDB(nm, loc, bl, mob) {
+    const db = window.fbDB;
+    const form = scr('donorRegistrationForm');
+    
+    // 1. திருத்தம் (Edit) மோடு
+    if (window.isEditing) {
+        var updates = { name: nm, loc: loc, blood: bl };
+        var ref = window.fbRef(db, 'records/' + window.editingMob);
+        
+        window.fbUpdate(ref, updates).then(() => {
+            showToast('விவரங்கள் திருத்தப்பட்டன! ✅');
+            finishSuccess(form); // ஃபார்மை முடிக்கிறோம்
+        });
+    } 
+    // 2. புதிய பதிவு (Add) மோடு
+    else {
+        var isActive = scr('activeToggle') ? scr('activeToggle').checked : true;
+        
+        dbWrite('records', { 
+            name: nm, loc: loc, blood: bl, mobile: '+91' + mob,
+            active: isActive, ownerUid: (fbUser ? fbUser.uid : '') 
+        });
+        showToast('பதிவு வெற்றிகரமாக சேர்க்கப்பட்டது ✅');
+        finishSuccess(form); // ஃபார்மை முடிக்கிறோம்
+    }
+}
+
+/* 2. வெற்றிகரமாகச் சேமித்த பிறகு ஃபார்மை சுத்தம் செய்து மறைக்கும் ஹெல்பர் */
+function finishSuccess(form) {
+    // ஃபீல்டுகளை சுத்தம் செய்கிறோம்
+    scr('dNm').value = ''; 
+    scr('dLoc').value = ''; 
+    scr('dBlood').value = ''; 
+    scr('dMob').value = '';
+    scr('dMob').readOnly = false; 
+    
+    // ஃபார்மை மறைக்கிறோம்
+    if(form) form.style.display = 'none';
+    
+    // நிலைகளை ரீசெட் செய்கிறோம்
+    window.isEditing = false;
+    
+    // UI-ஐ அப்டேட் செய்கிறோம்
+    renderMyRecords();
+    if(typeof saveState === 'function') saveState();
+}
+
+/* 3. கேன்சல் பட்டனுக்கான பங்க்ஷன் (எரர் வராமல் தடுக்க) */
+function cancelEdit() {
+    var form = scr('donorRegistrationForm');
+    if(form) form.style.display = 'none';
+    
+    // எடிட் மோடை ஆப் செய்து, மொபைல் நம்பர் பாக்ஸை நார்மல் ஆக்குகிறோம்
+    window.isEditing = false;
+    scr('dMob').readOnly = false;
+    scr('dNm').value = ''; 
+    scr('dLoc').value = ''; 
+    scr('dBlood').value = ''; 
+    scr('dMob').value = '';
+}tn.onclick = function() {
         // 1. ஃபார்மை மீண்டும் காட்டவும்
         var form = scr('donorRegistrationForm');
         if(form) form.style.display = 'block';
