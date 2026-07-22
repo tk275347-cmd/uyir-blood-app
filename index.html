@@ -130,6 +130,21 @@
     align-items: center;
     position: relative;
 }
+
+ .wa-btn {
+    background-color: #25D366;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.wa-btn:hover {
+    background-color: #128C7E;
+}
  
   .home-hero::before{content:"";position:absolute;width:230px;height:230px;border-radius:50%;
     background:rgba(255,255,255,.08);top:-90px;right:-70px;}
@@ -564,6 +579,13 @@
           <span class="li-tx"><span class="a">ஆப் பற்றி</span><span class="b">Version 1.0.0</span></span>
           <span class="arr" aria-hidden="true">›</span>
         </button>
+        </button>
+        <div class="section-title" style="margin-top:22px;">பகிரவும்</div>
+        <button class="list-item" type="button" onclick="openShareApp()">
+          <span class="li-ic" aria-hidden="true">📲</span>
+          <span class="li-tx"><span class="a">ஆப்பை பகிரவும்</span><span class="b">QR கோடு ஸ்கேன் செய்து டவுன்லோட் செய்யலாம்</span></span>
+          <span class="arr" aria-hidden="true">›</span>
+        </button>
       </div>
     </section>
 
@@ -596,6 +618,7 @@
                 <span class="mtx"><span class="mt">மொபைல் நம்பர் + OTP</span><span class="ms">மொபைல் நம்பர் மூலம் OTP போட்டு உள்நுழைய</span></span>
                 <span class="marr" aria-hidden="true">›</span>
               </button>
+             // renderMyRecords()-ல் HTML உருவாகும் இடத்தில் சேர்க்க வேண்டிய பட்டன்:
             </div>
           </div>
 
@@ -2036,8 +2059,6 @@ function addDonorRecord(){
     });
 }
 
-/* 2. உண்மையான சேமிப்பு பங்க்ஷன் (Helper Function) */
-
 /* 3. வரிசைப்படுத்தப்பட்ட UI (பதிவு படிவத்தை மறைத்தல்) */
 function renderMyRecords(){
   var box = scr('myDonorRecords');
@@ -2061,9 +2082,57 @@ function renderMyRecords(){
     info.appendChild(nm);
     info.appendChild(el('div','loc','📍 ' + d.loc + ' · 📱 +91 ' + d.mob));
     top.appendChild(info);
-   // --- எடிட் பட்டன் மாற்றம் தொடக்கம் ---
-    var editBtn = el('div', 'edit-btn', '✏️ எடிட்'); // அல்லது ஒரு ஐகான்
-    editB/* 1. புதிய மற்றும் திருத்தப்பட்ட பதிவுகளுக்கான பொதுவான சேமிப்பு பங்க்ஷன் */
+
+    // --- எடிட் மற்றும் வாட்ஸ்அப் பட்டன்கள் ---
+    var editBtn = el('div', 'edit-btn', '✏️ எடிட்');
+    editBtn.onclick = function() {
+        var form = scr('donorRegistrationForm');
+        if(form) form.style.display = 'block';
+        
+        scr('dNm').value = d.name;
+        scr('dLoc').value = d.loc;
+        scr('dBlood').value = d.blood;
+        scr('dMob').value = d.mob;
+        scr('dMob').readOnly = true;
+        
+        window.isEditing = true; 
+        window.editingMob = d.mob;
+    };
+   
+    var cancelBtn = el('div','cancel-btn', '❌ கேன்சல்');
+    cancelBtn.onclick = function() {
+        cancelEdit();
+    }; 
+
+    // வாட்ஸ்அப் பட்டன்
+    var waBtn = el('div', 'wa-btn', '💬 WhatsApp');
+    waBtn.onclick = function() {
+        sendWhatsApp(d.mob, d.name);
+    };
+    // ------------------------------------
+
+    top.appendChild(el('div','blood-tag', d.blood));
+    card.appendChild(top);
+
+    var btnContainer = el('div','btn-container');
+    btnContainer.appendChild(editBtn); 
+    btnContainer.appendChild(cancelBtn); 
+    btnContainer.appendChild(waBtn); // வாட்ஸ்அப் பட்டனை சேர்த்தல்
+     
+    card.appendChild(btnContainer);
+    box.appendChild(card);
+  });
+
+  var banner = scr('donorStatusBanner');
+  if(banner) box.appendChild(banner);
+
+  if(myRecords.length === 0){
+    var em = el('div','empty');
+    em.appendChild(el('div','ei','🩸'));
+    em.appendChild(el('p', null, 'இன்னும் பதிவுகள் இல்லை. விவரங்களைச் சேர்க்கவும்.'));
+    box.appendChild(em);
+  }
+}
 function saveDonorToDB(nm, loc, bl, mob) {
     const db = window.fbDB;
     const form = scr('donorRegistrationForm');
@@ -2078,18 +2147,29 @@ function saveDonorToDB(nm, loc, bl, mob) {
             finishSuccess(form); // ஃபார்மை முடிக்கிறோம்
         });
     } 
-    // 2. புதிய பதிவு (Add) மோடு
+   // 2. புதிய பதிவு (Add) மோடு
     else {
         var isActive = scr('activeToggle') ? scr('activeToggle').checked : true;
+        var mobileNumber = '+91' + mob;
         
-        dbWrite('records', { 
-            name: nm, loc: loc, blood: bl, mobile: '+91' + mob,
-            active: isActive, ownerUid: (fbUser ? fbUser.uid : '') 
+        // இங்கே 'dbWrite'-க்கு பதிலாக 'window.fbSet' முறை பயன்படுத்தப்பட்டுள்ளது
+        var recordRef = window.fbRef(db, 'records/' + mob);
+        
+        window.fbSet(recordRef, { 
+            name: nm, 
+            loc: loc, 
+            blood: bl, 
+            mobile: mobileNumber,
+            active: isActive, 
+            ownerUid: (window.fbUser ? window.fbUser.uid : '') 
+        }).then(() => {
+            showToast('பதிவு வெற்றிகரமாக சேர்க்கப்பட்டது ✅');
+            finishSuccess(form);
+        }).catch((error) => {
+            console.error("Firebase Error: ", error);
+            showToast('பிழை மீண்டும் முயற்சிக்கவும் ❌');
         });
-        showToast('பதிவு வெற்றிகரமாக சேர்க்கப்பட்டது ✅');
-        finishSuccess(form); // ஃபார்மை முடிக்கிறோம்
     }
-}
 
 /* 2. வெற்றிகரமாகச் சேமித்த பிறகு ஃபார்மை சுத்தம் செய்து மறைக்கும் ஹெல்பர் */
 function finishSuccess(form) {
@@ -2162,6 +2242,37 @@ function cancelEdit() {
     em.appendChild(el('p', null, 'இன்னும் பதிவுகள் இல்லை. விவரங்களைச் சேர்க்கவும்.'));
     box.appendChild(em);
   }
+}
+
+ // ரெக்கார்டை எடிட் செய்ய இந்த பங்க்ஷனைச் சேர்க்கவும்
+function editB(mob) {
+    const db = window.fbDB;
+    const ref = window.fbRef(db, 'records/' + mob);
+    
+    // Firebase-ல் இருந்து அந்த மொபைல் எண்கான டேட்டாவை எடுத்தல்
+    window.fbGet(ref).then((snapshot) => {
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            
+            // ஃபார்மில் பழைய மதிப்புகளை நிரப்புதல்
+            scr('dNm').value = data.name || '';
+            scr('dLoc').value = data.loc || '';
+            scr('dBlood').value = data.blood || '';
+            scr('dMob').value = mob;
+            
+            // மொபைல் நம்பரை மாற்ற முடியாதவாறு லாக் செய்வுதல் (Edit மோடு)
+            scr('dMob').readOnly = true;
+            window.isEditing = true;
+            window.editingMob = mob;
+            
+            // ஃபார்மைத் திரையில் காட்டுதல்
+            const form = scr('donorRegistrationForm');
+            if(form) form.style.display = 'block';
+        }
+    }).catch((error) => {
+        console.error("Error loading record for edit: ", error);
+        showToast('விவரங்களை எடுப்பதில் பிழை ❌');
+    });
 }
 
 /* 3. ஸ்டேட்டஸ் மாற்றுதல் - எந்த மாற்றமும் இல்லை, அப்படியே இருக்கலாம் */
@@ -2300,6 +2411,26 @@ function doDelete(){
   } else {
     finishDelete();
   }
+}
+
+ /* வாட்ஸ்அப் ஓபன் செய்து செய்தி அனுப்பும் பங்க்ஷன் */
+function sendWhatsApp(mob, name) {
+    // எண்களை மட்டும் தனியாக பிரித்தெடுத்தல்
+    var cleanMob = mob.toString().replace(/\D/g, '');
+    
+    // 10 இலக்க எண்ணாக இருந்தால் முன்னால் 91 (+91) சேர்த்துக் கொள்ளும்
+    if (cleanMob.length === 10) {
+        cleanMob = '91' + cleanMob;
+    }
+
+    // வாட்ஸ்அப்பில் அனுப்ப விரும்பும் செய்தி
+    var textMessage = `வணக்கம் ${name}, ரத்த தானம் தொடர்பாக உங்களைத் தொடர்பு கொள்கிறோம்.`;
+    
+    // வாட்ஸ்அப் லிங்க்
+    var waUrl = `https://wa.me/${cleanMob}?text=${encodeURIComponent(textMessage)}`;
+    
+    // புதிய விண்டோவில் வாட்ஸ்அப்பைத் திறப்பது
+    window.open(waUrl, '_blank');
 }
 
 /* ---------- Policy modal (static, trusted content) ---------- */
