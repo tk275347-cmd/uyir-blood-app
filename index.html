@@ -642,7 +642,6 @@
                 <span class="mtx"><span class="mt">மொபைல் நம்பர் + OTP</span><span class="ms">மொபைல் நம்பர் மூலம் OTP போட்டு உள்நுழைய</span></span>
                 <span class="marr" aria-hidden="true">›</span>
               </button>
-             // renderMyRecords()-ல் HTML உருவாகும் இடத்தில் சேர்க்க வேண்டிய பட்டன்:
             </div>
           </div>
 
@@ -856,6 +855,10 @@
               <div class="with-icon"><span class="pre" aria-hidden="true">📱</span><input id="dMob" type="tel" inputmode="tel" maxlength="14" autocomplete="tel" placeholder="9012345678" aria-describedby="dMob-err"></div>
               <p class="field-err" id="dMob-err" role="alert"></p>
             </div>
+           <div class="form-group">
+    <label for="donorWa">WhatsApp Number</label>
+    <input type="tel" id="donorWa" placeholder="உங்கள் வாட்ஸ்அப் எண்ணை உள்ளிடவும்" required>
+</div>
             <button class="primary-btn" type="submit" id="donorFormSubmitBtn">＋ பதிவை சேர்</button>
           </form>
         </div>
@@ -1534,6 +1537,11 @@ function renderDonorResults(out){
     msgBtn.id = 'msg-' + key;
     msgBtn.addEventListener('click', function(){ sendMessage(key, d.name); });
 
+    // வாட்ஸ்அப் பட்டன்
+    var waBtn = el('div', 'wa-btn', '💬 WhatsApp');
+    waBtn.onclick = function() {
+        sendWhatsApp(d.mob, d.name);
+    };
     var callBtn = el('button','act-btn call-btn','📞 கால் செய்');
     callBtn.type = 'button';
     callBtn.id = 'call-' + key;
@@ -2097,13 +2105,14 @@ function authSuccess(mode, method){
 var myRecords = [];
 /* 1. டோனர் பதிவு செய்யும் பங்க்ஷன் (டூப்ளிகேட் தடுப்புடன்) */
 function addDonorRecord(){
-  clearErrors(['dNm','dLoc','dBlood','dMob']);
+  clearErrors(['dNm','dLoc','dBlood','dMob','dwa']);
   var nm  = scr('dNm').value.trim();
   var loc = scr('dLoc').value.trim();
   var bl  = scr('dBlood').value;
   var mob = onlyDigits(scr('dMob').value);
+    var wa = onlyDigits(scr('dwa').value);
   
-  var mobRegex = /^[6-9]\d{9}$/;
+ var mobRegex = /^[6-9]\d{9}$/;
   var ok = true;
   
   if(!nm){ setFieldError('dNm','பெயரை உள்ளிடவும்'); ok = false; }
@@ -2113,6 +2122,10 @@ function addDonorRecord(){
   if (!mobRegex.test(mob)) { 
     setFieldError('dMob', 'சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்'); 
     ok = false; 
+   if (!mobRegex.test(wa)) {
+    setFieldError('dWa', 'சரியான 10 இலக்க வாட்ஸ்அப் எண்ணை உள்ளிடவும்');
+    ok = false;
+}
   }
   
   if(!ok) return;
@@ -2171,6 +2184,7 @@ function renderMyRecords(){
         scr('dLoc').value = d.loc;
         scr('dBlood').value = d.blood;
         scr('dMob').value = d.mob;
+      scr('dwa').value = d.wa;
         scr('dMob').readOnly = true;
         
         window.isEditing = true; 
@@ -2186,11 +2200,6 @@ function renderMyRecords(){
         cancelEdit();
     }; 
 
-    // வாட்ஸ்அப் பட்டன்
-    var waBtn = el('div', 'wa-btn', '💬 WhatsApp');
-    waBtn.onclick = function() {
-        sendWhatsApp(d.mob, d.name);
-    };
     // ------------------------------------
 
     top.appendChild(el('div','blood-tag', d.blood));
@@ -2272,7 +2281,7 @@ function notifyNewRequest(receiverName){
   try{
     if(!('Notification' in window) || Notification.permission !== 'granted') return;
     var title = '🩸 புதிய தொடர்பு கோரிக்கை';
-    var opts  = { body: receiverName + ' உங்களைத் தொடர்பு கொள்ள அனுமதி கேட்கிறார்.', icon: 'icon-192.png' };
+    var opts  = { body: receiverName + ' உங்களைத் தொடர்பு கொள்ள அனுமதி கேட்கிறார்.', icon: 'icon.png' };
     /* ஆண்ட்ராய்டு Chrome-ல் Notification()-ஐ நேரடியாக அழைக்க முடியாது —
        Service Worker மூலமாகவே காட்ட வேண்டும். SW இயங்கினால் அதைப் பயன்படுத்துகிறோம்,
        இல்லையெனில் (டெஸ்க்டாப் போன்றவை) நேரடி Notification()-க்கு திரும்புகிறோம். */
