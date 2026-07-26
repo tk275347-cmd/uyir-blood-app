@@ -1553,6 +1553,7 @@ function renderDonorResults(out){
 
     actions.appendChild(msgBtn);
     actions.appendChild(callBtn);
+    actions.appendChild(waBtn); // வாட்ஸ்அப் பட்டனை சேர்த்தல்
     actions.appendChild(note);
     card.appendChild(actions);
     box.appendChild(card);
@@ -2121,11 +2122,11 @@ function addDonorRecord(){
   
   if (!mobRegex.test(mob)) { 
     setFieldError('dMob', 'சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்'); 
-    ok = false; 
+    ok = false;
+ }
    if (!mobRegex.test(wa)) {
     setFieldError('dWa', 'சரியான 10 இலக்க வாட்ஸ்அப் எண்ணை உள்ளிடவும்');
     ok = false;
-}
   }
   
   if(!ok) return;
@@ -2140,7 +2141,7 @@ function addDonorRecord(){
         showToast('பதிவு செய்ய முடியவில்லை: எண் ஏற்கனவே உள்ளது ⚠️', true);
       } else {
         // எண் இல்லை என்றால் மட்டும் சேமிக்கவும்
-        saveDonorToDB(nm, loc, bl, mob);
+        saveDonorToDB(nm, loc, bl, mob, wa);
       }
     }).catch((err) => {
      console.error("பிழை:", err);
@@ -2171,7 +2172,7 @@ function renderMyRecords(){
     var nm = el('div','nm', d.name);
     nm.appendChild(el('span','badge-mine','என்'));
     info.appendChild(nm);
-    info.appendChild(el('div','loc','📍 ' + d.loc + ' · 📱 +91 ' + d.mob));
+    info.appendChild(el('div','loc','📍 ' + d.loc + ' · 📱 +91 ' + d.mob + d.wa));
     top.appendChild(info);
 
     // --- எடிட் மற்றும் வாட்ஸ்அப் பட்டன்கள் ---
@@ -2355,13 +2356,13 @@ function respondToRequest(donorMob, reqId, accept){
 }
 /* ================= /Donor-side notifications ================= */
 
-function saveDonorToDB(nm, loc, bl, mob) {
+function saveDonorToDB(nm, loc, bl, mob, wa) {
     const db = window.fbDB;
     const form = scr('donorRegistrationForm');
     
     // 1. திருத்தம் (Edit) மோடு
     if (window.isEditing) {
-        var updates = { name: nm, loc: loc, blood: bl };
+        var updates = { name: nm, loc: loc, blood: bl, whatsapp: wa};
         var ref = window.fbRef(db, 'records/' + window.editingMob);
         
         window.fbUpdate(ref, updates).then(() => {
@@ -2371,6 +2372,7 @@ function saveDonorToDB(nm, loc, bl, mob) {
                 myRecords[idx].name  = nm;
                 myRecords[idx].loc   = loc;
                 myRecords[idx].blood = bl;
+                myRecords[idx].whatsapp = wa;
             }
             showToast('விவரங்கள் திருத்தப்பட்டன! ✅');
             finishSuccess(form); // ஃபார்மை முடிக்கிறோம்
@@ -2393,12 +2395,13 @@ function saveDonorToDB(nm, loc, bl, mob) {
             loc: loc, 
             blood: bl, 
             mobile: mobileNumber,
+         whatsapp: wa
             active: isActive, 
             ownerUid: (window.fbUser ? window.fbUser.uid : '') 
         }).then(() => {
             // புதிய பதிவை "என் பதிவுகள்" பட்டியலில் சேர்க்கிறோம் —
             // இது இல்லாமல் ஃபார்ம் மறையாது (myRecords காலியாகவே இருக்கும்)
-            myRecords.push({ name: nm, loc: loc, blood: bl, mob: mob });
+            myRecords.push({ name: nm, loc: loc, blood: bl, mob: mob, whatsapp: wa });
             showToast('பதிவு வெற்றிகரமாக சேர்க்கப்பட்டது ✅');
             finishSuccess(form);
         }).catch((error) => {
@@ -2416,6 +2419,7 @@ function finishSuccess(form) {
     scr('dLoc').value = ''; 
     scr('dBlood').value = ''; 
     scr('dMob').value = '';
+    scr('dwa').value = '';
     scr('dMob').readOnly = false; 
     
     // ஃபார்மை மறைக்கிறோம்
@@ -2444,6 +2448,7 @@ function cancelEdit() {
     scr('dLoc').value = ''; 
     scr('dBlood').value = ''; 
     scr('dMob').value = '';
+    scr('dwa').value = '';
 
     var submitBtn = scr('donorFormSubmitBtn');
     if(submitBtn) submitBtn.textContent = '＋ பதிவை சேர்';
@@ -2464,6 +2469,7 @@ function editB(mob) {
             scr('dLoc').value = data.loc || '';
             scr('dBlood').value = data.blood || '';
             scr('dMob').value = mob;
+            scr('dwa').value = wa;
             
             // மொபைல் நம்பரை மாற்ற முடியாதவாறு லாக் செய்வுதல் (Edit மோடு)
             scr('dMob').readOnly = true;
