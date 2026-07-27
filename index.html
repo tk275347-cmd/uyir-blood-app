@@ -637,7 +637,6 @@
                 <span class="mtx"><span class="mt">மொபைல் நம்பர் + OTP</span><span class="ms">மொபைல் நம்பர் மூலம் OTP போட்டு உள்நுழைய</span></span>
                 <span class="marr" aria-hidden="true">›</span>
               </button>
-             // renderMyRecords()-ல் HTML உருவாகும் இடத்தில் சேர்க்க வேண்டிய பட்டன்:
             </div>
           </div>
 
@@ -2800,10 +2799,10 @@ function launchUpi(amount){
       // handedOff === true எனில் பயனர் இப்போது UPI ஆப்பில் இருக்கிறார் — அவரை
       // தொந்தரவு செய்யக் கூடாது; visibilitychange listener மேலே அவர் திரும்பி
       // வரும்போது பணம் அனுப்பினீர்களா என்று கேட்கும்.
-    }, 2500);
+    }, 22500);
   } else {
     window.location.href = upi;
-    setTimeout(stopWatching, 2500);
+    setTimeout(stopWatching, 22500);
   }
 }
 
