@@ -142,12 +142,6 @@
  .wa-btn {
     background-color: #25D366;
     color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 5px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-left: 5px;
 }
 
 .wa-btn:hover {
@@ -333,6 +327,8 @@
   .status-banner{border-radius:14px;padding:14px 16px;font-size:13.5px;font-weight:600;margin-bottom:16px;text-align:center;}
   .status-on{background:#e8f5ee;color:var(--green);}
   .status-off{background:#f3f4f6;color:var(--muted);}
+  .status-cooldown{background:#fff8e6;color:#92650c;text-align:center;border-radius:12px;
+    padding:10px 14px;font-size:12.5px;font-weight:600;margin-top:10px;}
 
   /* list item */
   .list-item{background:#fff;border-radius:14px;padding:15px 16px;display:flex;align-items:center;gap:13px;
@@ -603,7 +599,6 @@
           <span class="li-tx"><span class="a">ஆப் பற்றி</span><span class="b">Version 1.0.0</span></span>
           <span class="arr" aria-hidden="true">›</span>
         </button>
-        </button>
         <div class="section-title" style="margin-top:22px;">பகிரவும்</div>
         <button class="list-item" type="button" onclick="openShareApp()">
           <span class="li-ic" aria-hidden="true">📲</span>
@@ -642,6 +637,7 @@
                 <span class="mtx"><span class="mt">மொபைல் நம்பர் + OTP</span><span class="ms">மொபைல் நம்பர் மூலம் OTP போட்டு உள்நுழைய</span></span>
                 <span class="marr" aria-hidden="true">›</span>
               </button>
+             // renderMyRecords()-ல் HTML உருவாகும் இடத்தில் சேர்க்க வேண்டிய பட்டன்:
             </div>
           </div>
 
@@ -855,10 +851,11 @@
               <div class="with-icon"><span class="pre" aria-hidden="true">📱</span><input id="dMob" type="tel" inputmode="tel" maxlength="14" autocomplete="tel" placeholder="9012345678" aria-describedby="dMob-err"></div>
               <p class="field-err" id="dMob-err" role="alert"></p>
             </div>
-           <div class="form-group">
-    <label for="donorWa">WhatsApp Number</label>
-    <input type="tel" id="donorWa" placeholder="உங்கள் வாட்ஸ்அப் எண்ணை உள்ளிடவும்" required>
-</div>
+            <div class="field">
+              <label for="dWhatsapp">வாட்ஸ்அப் நம்பர்</label>
+              <div class="with-icon"><span class="pre" aria-hidden="true">💬</span><input id="dWhatsapp" type="tel" inputmode="numeric" maxlength="10" placeholder="வாட்ஸ்அப் நம்பர்" aria-describedby="dWhatsapp-err"></div>
+              <p class="field-err" id="dWhatsapp-err" role="alert"></p>
+            </div>
             <button class="primary-btn" type="submit" id="donorFormSubmitBtn">＋ பதிவை சேர்</button>
           </form>
         </div>
@@ -884,6 +881,11 @@
         <button class="list-item" type="button" onclick="openPolicy('privacy')">
           <span class="li-ic" aria-hidden="true">🔒</span>
           <span class="li-tx"><span class="a">தனியுரிமைக் கொள்கை</span><span class="b">Privacy Policy</span></span>
+          <span class="arr" aria-hidden="true">›</span>
+        </button>
+        <button class="list-item" type="button" onclick="doLogout()">
+          <span class="li-ic" aria-hidden="true">🚪</span>
+          <span class="li-tx"><span class="a">வெளியேறு</span><span class="b">Logout — கணக்கு நீக்கப்படாது</span></span>
           <span class="arr" aria-hidden="true">›</span>
         </button>
         <div class="section-title" style="margin-top:22px;">பகிரவும்</div>
@@ -923,7 +925,7 @@
   import {
     getAuth, signInWithPhoneNumber, GoogleAuthProvider, RecaptchaVerifier,
     signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-    signOut, deleteUser, sendPasswordResetEmail
+    signOut, deleteUser, sendPasswordResetEmail, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
   import {
     getDatabase, ref, set, push, get, query, orderByChild, equalTo, remove, update, onValue, serverTimestamp
@@ -978,6 +980,17 @@ window.fbRef = ref; // 'ref' பங்க்ஷனையும் சேர்�
   console.log("Firebase Modular SDK initialized!");
   document.dispatchEvent(new Event('firebase-ready'));
 
+  /* window.fbUser இதுவரை எங்குமே அமைக்கப்படவில்லை — இதனால் ஒவ்வொரு டோனர் பதிவும்
+   * காலியான ownerUid-உடன் சேமிக்கப்பட்டது, "என் பதிவுகள்" எப்போதும் இந்த device-ன்
+   * localStorage cache-ஐ மட்டுமே நம்பியிருந்தது. ஒரே device-ல் வேறொரு டோனர் பதிவு
+   * செய்தால், பழைய பதிவே தொடர்ந்து காட்டப்பட்டு புதிய டோனர் பதிவு படிவம் தெரியாமல்
+   * போனது. இப்போது உண்மையான உள்நுழைவு நிலையை கண்காணித்து, Firebase-இல் இருந்தே
+   * "என் பதிவுகள்" ஐ ஏற்றுகிறோம். */
+  onAuthStateChanged(window.fbAuth, function(user){
+    window.fbUser = user;
+    document.dispatchEvent(new CustomEvent('fb-auth-state-changed', { detail: { user: user } }));
+  });
+
   // இந்த பங்க்ஷனை அங்கே சேர்த்துக் கொள்ளுங்கள்
   window.ensureRecaptcha = function() {
       if (window.recaptchaVerifier) {
@@ -1016,23 +1029,45 @@ document.addEventListener('firebase-ready',  () => {
   if(typeof subscribeDonorNotifications === 'function') subscribeDonorNotifications();
 });
 
+/* உண்மையான உள்நுழைவு நிலை மாறும்போது (login/logout/session restore),
+ * "என் பதிவுகள்" ஐ Firebase-இல் இருந்தே சரியாக ஏற்றுகிறோம் — device-ல் இருக்கும்
+ * பழைய localStorage cache-ஐ நம்பாமல். இதுவே புதிய டோனர்/ஏற்கனவே பதிவு செய்தவர்
+ * வேறுபாட்டை சரியாக காட்டுகிறது. */
+document.addEventListener('fb-auth-state-changed', function(e){
+  fbUser = window.fbUser || null;
+  if(fbUser){
+    loadMyRecordsFromDB();
+  } else {
+    myRecords = [];
+    if(typeof renderMyRecords === 'function' && scr('myDonorRecords')) renderMyRecords();
+  }
+});
+
   function loadMyRecordsFromDB() {
-    if (!fbDB || !fbUser) return;
+    if (!window.fbReady || !window.fbDB || !window.fbUser) return;
+    if (!scr('myDonorRecords')) return;   /* DOM not ready yet — Init's renderMyRecords() will cover it */
 
-    fbDB.ref('records')
-        .orderByChild('ownerUid')
-        .equalTo(fbUser.uid)
-        .once('value')
+    var recordsRef = window.fbRef(window.fbDB, 'records');
+    var q = window.fbQuery(recordsRef, window.fbOrderByChild('ownerUid'), window.fbEqualTo(window.fbUser.uid));
+
+    window.fbGet(q)
         .then(function(snapshot) {
+            var fetched = [];
             if (snapshot.exists()) {
-               var myRecords = [];
                 snapshot.forEach(function(child) {
-                    myRecords.push(child.val());
+                    var v = child.val() || {};
+                    fetched.push({
+                        name: v.name || '', loc: v.loc || '', blood: v.blood || '',
+                        mob: child.key,
+                        wa: onlyDigits(v.whatsapp || '').slice(-10),
+                        cooldownUntil: v.cooldownUntil || null
+                    });
                 });
-                renderMyRecords();
             }
+            myRecords = fetched;
+            renderMyRecords();
+            saveState();
         })
-
         .catch(function(err) {
             console.error("தரவை எடுக்க முடியவில்லை:", err);
         });
@@ -1486,14 +1521,19 @@ function searchDonors(){
 window.fbDbGet('records')
     .then(function(snap){
       var list = [];
+      var now = Date.now();
       snap.forEach(function(child){
         var v = child.val() || {};
         if(v.active === false) return;
+        // ஒரு டோனர் ஒரு கோரிக்கையை ஏற்றுக்கொண்ட நாளிலிருந்து 90 நாட்கள் (மருத்துவ ரீதியான
+        // ஓய்வு காலம்) அவர்களின் பதிவு தேடலில் காட்டப்படாது.
+        if(v.cooldownUntil && v.cooldownUntil > now) return;
         // records/{mobile} இல் key-ஆகவே சுத்தமான 10-இலக்க மொபைல் எண் இருக்கும்.
         // v.mobile ('+91...') இலிருந்து மீண்டும் கணக்கிட்டால் '+91' இன் '91'-ம் இணைந்து
         // தவறான எண் கிடைக்கும் (Call பட்டனை உடைக்கும்) — அதனால் child.key-ஐ பயன்படுத்துகிறோம்.
         list.push({ name: v.name || '', loc: v.loc || '', blood: v.blood || '',
-                    mob: child.key || onlyDigits(v.mobile || '').slice(-10) });
+                    mob: child.key || onlyDigits(v.mobile || '').slice(-10),
+                    wa: onlyDigits(v.whatsapp || '').slice(-10) });
       });
       filterAndRender(list.length > 0 ? list : DONORS);
     })
@@ -1537,35 +1577,42 @@ function renderDonorResults(out){
     msgBtn.id = 'msg-' + key;
     msgBtn.addEventListener('click', function(){ sendMessage(key, d.name); });
 
-    // வாட்ஸ்அப் பட்டன்
-    var waBtn = el('div', 'wa-btn', '💬 WhatsApp');
-    waBtn.onclick = function() {
-        sendWhatsApp(d.mob, d.name);
-    };
     var callBtn = el('button','act-btn call-btn','📞 கால் செய்');
     callBtn.type = 'button';
     callBtn.id = 'call-' + key;
     callBtn.setAttribute('aria-disabled','true');
     callBtn.addEventListener('click', function(){ makeCall(key, d.name); });
 
-    var note = el('div','locknote','🔒 மெசேஜ் அனுப்பிய பிறகு, டோனர் அனுமதி கொடுத்தால் கால் பட்டன் செயல்படும்');
+    var note = el('div','locknote','🔒 மெசேஜ் அனுப்பினால் உடனே கால் பட்டன் செயல்படும்');
     note.id = 'note-' + key;
+
+    // ரிசீவர்-க்கான வாட்ஸ்அப் பட்டன் — டோனர் பதிவின்போது கொடுத்த whatsapp நம்பரைப் பயன்படுத்தி
+    // நேரடியாக அவருடன் வாட்ஸ்அப் அரட்டையைத் திறக்கிறது. Message/Call-ஐப் போல் அல்லாமல்,
+    // இது எப்போதும் சுதந்திரமாகச் செயல்படும் (எதற்காகவும் காத்திருக்க வேண்டாம்).
+    var waBtn = el('button','act-btn wa-btn','💬 WhatsApp மெசேஜ்');
+    waBtn.type = 'button';
+    waBtn.addEventListener('click', function(){
+      if(!d.wa){ showToast('இந்த டோனர் வாட்ஸ்அப் நம்பர் பதிவு செய்யவில்லை', true); return; }
+      sendWhatsApp(d.wa, d.name);
+    });
 
     actions.appendChild(msgBtn);
     actions.appendChild(callBtn);
-    actions.appendChild(waBtn); // வாட்ஸ்அப் பட்டனை சேர்த்தல்
     actions.appendChild(note);
+    actions.appendChild(waBtn);
     card.appendChild(actions);
+
     box.appendChild(card);
   });
 }
 
-/* Message must be sent before Call becomes active (per requirement).
- * sendMessage() creates a REAL contact-request record in Firebase under
- * contactRequests/{donorMobile}/{requestId}. The donor sees it via the
- * notification bell on their dashboard and must explicitly Allow it
- * before the receiver's Call button unlocks — enforced live via
- * fbOnValue(), not by trusting anything on the receiver's own device. */
+/* sendMessage() creates a REAL contact-request record in Firebase under
+ * contactRequests/{donorMobile}/{requestId} so the donor sees it via the
+ * notification bell on their dashboard. The receiver's Call button unlocks
+ * immediately once the message is sent — it no longer waits for the donor
+ * to Allow it. The donor's Allow/Decline choice now has a different purpose:
+ * accepting means they're agreeing to donate, which starts their 90-day
+ * availability cooldown (see respondToRequest). */
 function sendMessage(key, name){
   if(!window.currentReceiver || !window.currentReceiver.mobile){
     showToast('முதலில் உங்கள் விவரங்களை பதிவு செய்யவும்', true);
@@ -1590,33 +1637,17 @@ function sendMessage(key, name){
   var reqId = newRef.key;
 
   newRef.then(function(){
-    messaged[key] = { reqId: reqId, accepted: false };
+    messaged[key] = true;
     if(mbtn){
       mbtn.disabled = false;
       mbtn.classList.add('sent');
       mbtn.textContent = '✅ மெசேஜ் அனுப்பப்பட்டது';
     }
+    var cbtn = scr('call-' + key);
+    if(cbtn){ cbtn.classList.add('enabled'); cbtn.setAttribute('aria-disabled','false'); }
     var note = scr('note-' + key);
-    if(note) note.textContent = '⏳ டோனர் அனுமதிக்காக காத்திருக்கிறது…';
+    if(note) note.textContent = '✅ இப்போது கால் பண்ணலாம்';
     showToast(name + '-க்கு மெசேஜ் அனுப்பப்பட்டது 💬');
-
-    /* டோனர் "அனுமதி" கொடுக்கும் தருணத்தை நேரடியாக (realtime) கண்காணிக்கிறோம் */
-    var reqRef = window.fbRef(window.fbDB, 'contactRequests/' + key + '/' + reqId);
-    window.fbOnValue(reqRef, function(snap){
-      var v = snap.val();
-      if(!v || !messaged[key]) return;
-      if(v.status === 'accepted' && !messaged[key].accepted){
-        messaged[key].accepted = true;
-        var cbtn = scr('call-' + key);
-        if(cbtn){ cbtn.classList.add('enabled'); cbtn.setAttribute('aria-disabled','false'); }
-        var n2 = scr('note-' + key);
-        if(n2) n2.textContent = '✅ டோனர் அனுமதி கொடுத்தார் — இப்போது கால் பண்ணலாம்';
-        showToast(name + ' உங்கள் கோரிக்கையை ஏற்றுக்கொண்டார் ✅');
-      } else if(v.status === 'declined'){
-        var n3 = scr('note-' + key);
-        if(n3) n3.textContent = '❌ டோனர் இந்த கோரிக்கையை நிராகரித்தார்';
-      }
-    });
   }).catch(function(err){
     console.error('contact request failed:', err);
     if(mbtn) mbtn.disabled = false;
@@ -1630,7 +1661,6 @@ function sendMessage(key, name){
  * like tapping a phone number anywhere else on their phone. */
 function makeCall(key, name){
   if(!messaged[key]){ showToast('முதலில் மெசேஜ் அனுப்பவும்', true); return; }
-  if(!messaged[key].accepted){ showToast('டோனர் இன்னும் அனுமதி கொடுக்கவில்லை — சிறிது காத்திருக்கவும்', true); return; }
   window.location.href = 'tel:+91' + key;
 }
 
@@ -2106,14 +2136,14 @@ function authSuccess(mode, method){
 var myRecords = [];
 /* 1. டோனர் பதிவு செய்யும் பங்க்ஷன் (டூப்ளிகேட் தடுப்புடன்) */
 function addDonorRecord(){
-  clearErrors(['dNm','dLoc','dBlood','dMob','dwa']);
+  clearErrors(['dNm','dLoc','dBlood','dMob','dWhatsapp']);
   var nm  = scr('dNm').value.trim();
   var loc = scr('dLoc').value.trim();
   var bl  = scr('dBlood').value;
   var mob = onlyDigits(scr('dMob').value);
-    var wa = onlyDigits(scr('dwa').value);
+  var wa  = onlyDigits(scr('dWhatsapp').value);
   
- var mobRegex = /^[6-9]\d{9}$/;
+  var mobRegex = /^[6-9]\d{9}$/;
   var ok = true;
   
   if(!nm){ setFieldError('dNm','பெயரை உள்ளிடவும்'); ok = false; }
@@ -2122,10 +2152,10 @@ function addDonorRecord(){
   
   if (!mobRegex.test(mob)) { 
     setFieldError('dMob', 'சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்'); 
-    ok = false;
- }
-   if (!mobRegex.test(wa)) {
-    setFieldError('dWa', 'சரியான 10 இலக்க வாட்ஸ்அப் எண்ணை உள்ளிடவும்');
+    ok = false; 
+  }
+  if(!isMobile(wa)){
+    setFieldError('dWhatsapp', 'சரியான 10 இலக்க வாட்ஸ்அப் நம்பரை உள்ளிடவும்');
     ok = false;
   }
   
@@ -2136,7 +2166,7 @@ function addDonorRecord(){
  const recordsRef = window.fbRef(db,'records');
  const q = window.fbQuery(recordsRef, window.fbOrderByChild('mobile'), window.fbEqualTo('+91' + mob));
     window.fbGet(q).then((snapshot) => {
-      if (snapshot.exists()) {
+      if (snapshot.exists() && !window.isEditing) {
         showToast( 'இந்த மொபைல் எண் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது!');
         showToast('பதிவு செய்ய முடியவில்லை: எண் ஏற்கனவே உள்ளது ⚠️', true);
       } else {
@@ -2172,7 +2202,7 @@ function renderMyRecords(){
     var nm = el('div','nm', d.name);
     nm.appendChild(el('span','badge-mine','என்'));
     info.appendChild(nm);
-    info.appendChild(el('div','loc','📍 ' + d.loc + ' · 📱 +91 ' + d.mob + d.wa));
+    info.appendChild(el('div','loc','📍 ' + d.loc + ' · 📱 +91 ' + d.mob));
     top.appendChild(info);
 
     // --- எடிட் மற்றும் வாட்ஸ்அப் பட்டன்கள் ---
@@ -2185,8 +2215,8 @@ function renderMyRecords(){
         scr('dLoc').value = d.loc;
         scr('dBlood').value = d.blood;
         scr('dMob').value = d.mob;
-      scr('dwa').value = d.wa;
         scr('dMob').readOnly = true;
+        scr('dWhatsapp').value = d.wa || '';
         
         window.isEditing = true; 
         window.editingMob = d.mob;
@@ -2201,15 +2231,20 @@ function renderMyRecords(){
         cancelEdit();
     }; 
 
-    // ------------------------------------
-
     top.appendChild(el('div','blood-tag', d.blood));
     card.appendChild(top);
+
+    if(d.cooldownUntil && d.cooldownUntil > Date.now()){
+      var cd = new Date(d.cooldownUntil);
+      var dd = String(cd.getDate()).padStart(2,'0');
+      var mm = String(cd.getMonth()+1).padStart(2,'0');
+      var dateStr = dd + '/' + mm + '/' + cd.getFullYear();
+      card.appendChild(el('div','status-cooldown', '⏳ 90-நாள் ஓய்வு காலம் — ' + dateStr + ' வரை தேடலில் காட்டப்பட மாட்டீர்கள்'));
+    }
 
     var btnContainer = el('div','btn-container');
     btnContainer.appendChild(editBtn); 
     btnContainer.appendChild(cancelBtn); 
-    btnContainer.appendChild(waBtn); // வாட்ஸ்அப் பட்டனை சேர்த்தல்
      
     card.appendChild(btnContainer);
     box.appendChild(card);
@@ -2282,7 +2317,7 @@ function notifyNewRequest(receiverName){
   try{
     if(!('Notification' in window) || Notification.permission !== 'granted') return;
     var title = '🩸 புதிய தொடர்பு கோரிக்கை';
-    var opts  = { body: receiverName + ' உங்களைத் தொடர்பு கொள்ள அனுமதி கேட்கிறார்.', icon: 'icon.png' };
+    var opts  = { body: receiverName + ' உங்களைத் தொடர்பு கொள்ள அனுமதி கேட்கிறார்.', icon: 'icon-192.png' };
     /* ஆண்ட்ராய்டு Chrome-ல் Notification()-ஐ நேரடியாக அழைக்க முடியாது —
        Service Worker மூலமாகவே காட்ட வேண்டும். SW இயங்கினால் அதைப் பயன்படுத்துகிறோம்,
        இல்லையெனில் (டெஸ்க்டாப் போன்றவை) நேரடி Notification()-க்கு திரும்புகிறோம். */
@@ -2315,10 +2350,10 @@ function openNotifications(){
       var card = el('div','req-card');
       card.appendChild(el('div','req-name', r.receiverName));
       card.appendChild(el('div','req-mob', '📱 ' + r.receiverMobile));
-      card.appendChild(el('div','req-msg', 'இரத்த தானம் தொடர்பாக உங்களைத் தொடர்பு கொள்ள அனுமதி கேட்கிறார். ஏற்றுக்கொள்கிறீர்களா?'));
+      card.appendChild(el('div','req-msg', 'இரத்த தானம் தொடர்பாக உங்களைத் தொடர்பு கொண்டார். ஏற்றுக்கொண்டால் — நீங்கள் தானம் செய்ய இணங்குகிறீர்கள் என்று அர்த்தம்; அடுத்த 90 நாட்களுக்கு உங்கள் பதிவு தேடலில் காட்டப்படாது.'));
 
       var actions = el('div','req-actions');
-      var allow = el('button','allow-btn','✅ அனுமதி');
+      var allow = el('button','allow-btn','✅ ஏற்கிறேன்');
       allow.type = 'button';
       allow.addEventListener('click', function(){ respondToRequest(r.donorMob, r.reqId, true); });
       var decline = el('button','decline-btn','❌ நிராகரி');
@@ -2340,13 +2375,37 @@ function openNotifications(){
   openModal();
 }
 
+/* ஒரு டோனர் ஒரு கோரிக்கையை ஏற்றுக்கொள்வது இப்போது "நான் தானம் செய்யப் போகிறேன்" என்று
+ * அர்த்தம் — அதனால் அன்றைய தேதியிலிருந்து 90 நாட்களுக்கு (மருத்துவ ரீதியான ஓய்வு காலம்)
+ * அவர்களின் பதிவு தேடலில் காட்டப்படாது. இதற்கு தனி cron job தேவையில்லை: cooldownUntil
+ * தேதியை மட்டும் சேமிக்கிறோம், searchDonors() ஒவ்வொரு தேடலிலும் அதை Date.now()-உடன்
+ * ஒப்பிட்டு தானாகவே திரும்ப தேடலில் காட்டத் தொடங்கும். */
+var NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+
 function respondToRequest(donorMob, reqId, accept){
-  var ref = window.fbRef(window.fbDB, 'contactRequests/' + donorMob + '/' + reqId);
-  window.fbUpdate(ref, { status: accept ? 'accepted' : 'declined' })
+  var reqRef = window.fbRef(window.fbDB, 'contactRequests/' + donorMob + '/' + reqId);
+  var chain = window.fbUpdate(reqRef, { status: accept ? 'accepted' : 'declined' });
+
+  var cooldownUntil = null;
+  if(accept){
+    cooldownUntil = Date.now() + NINETY_DAYS_MS;
+    var recordRef = window.fbRef(window.fbDB, 'records/' + donorMob);
+    chain = chain.then(function(){ return window.fbUpdate(recordRef, { cooldownUntil: cooldownUntil }); });
+  }
+
+  chain
     .then(function(){
       window.pendingRequests = window.pendingRequests.filter(function(r){ return r.reqId !== reqId; });
       updateBellBadge();
-      showToast(accept ? 'அனுமதி வழங்கப்பட்டது ✅' : 'கோரிக்கை நிராகரிக்கப்பட்டது');
+
+      if(accept){
+        // சொந்த "என் பதிவுகள்" பட்டியலிலும் ஓய்வு காலத்தைப் பிரதிபலிக்கச் செய்கிறோம்
+        var idx = myRecords.findIndex(function(r){ return r.mob === donorMob; });
+        if(idx !== -1){ myRecords[idx].cooldownUntil = cooldownUntil; renderMyRecords(); saveState(); }
+        showToast('ஏற்றுக்கொள்ளப்பட்டது ✅ — 90 நாட்களுக்கு உங்கள் பதிவு தேடலில் காட்டப்படாது');
+      } else {
+        showToast('கோரிக்கை நிராகரிக்கப்பட்டது');
+      }
       openNotifications();   /* பேனலை புதுப்பித்த பட்டியலுடன் மீண்டும் காட்டு */
     })
     .catch(function(err){
@@ -2362,7 +2421,7 @@ function saveDonorToDB(nm, loc, bl, mob, wa) {
     
     // 1. திருத்தம் (Edit) மோடு
     if (window.isEditing) {
-        var updates = { name: nm, loc: loc, blood: bl, whatsapp: wa};
+        var updates = { name: nm, loc: loc, blood: bl, whatsapp: '+91' + wa };
         var ref = window.fbRef(db, 'records/' + window.editingMob);
         
         window.fbUpdate(ref, updates).then(() => {
@@ -2372,7 +2431,7 @@ function saveDonorToDB(nm, loc, bl, mob, wa) {
                 myRecords[idx].name  = nm;
                 myRecords[idx].loc   = loc;
                 myRecords[idx].blood = bl;
-                myRecords[idx].whatsapp = wa;
+                myRecords[idx].wa    = wa;
             }
             showToast('விவரங்கள் திருத்தப்பட்டன! ✅');
             finishSuccess(form); // ஃபார்மை முடிக்கிறோம்
@@ -2395,13 +2454,13 @@ function saveDonorToDB(nm, loc, bl, mob, wa) {
             loc: loc, 
             blood: bl, 
             mobile: mobileNumber,
-         whatsapp: wa
+            whatsapp: '+91' + wa,
             active: isActive, 
             ownerUid: (window.fbUser ? window.fbUser.uid : '') 
         }).then(() => {
             // புதிய பதிவை "என் பதிவுகள்" பட்டியலில் சேர்க்கிறோம் —
             // இது இல்லாமல் ஃபார்ம் மறையாது (myRecords காலியாகவே இருக்கும்)
-            myRecords.push({ name: nm, loc: loc, blood: bl, mob: mob, whatsapp: wa });
+            myRecords.push({ name: nm, loc: loc, blood: bl, mob: mob, wa: wa });
             showToast('பதிவு வெற்றிகரமாக சேர்க்கப்பட்டது ✅');
             finishSuccess(form);
         }).catch((error) => {
@@ -2419,8 +2478,8 @@ function finishSuccess(form) {
     scr('dLoc').value = ''; 
     scr('dBlood').value = ''; 
     scr('dMob').value = '';
-    scr('dwa').value = '';
     scr('dMob').readOnly = false; 
+    scr('dWhatsapp').value = '';
     
     // ஃபார்மை மறைக்கிறோம்
     if(form) form.style.display = 'none';
@@ -2448,7 +2507,7 @@ function cancelEdit() {
     scr('dLoc').value = ''; 
     scr('dBlood').value = ''; 
     scr('dMob').value = '';
-    scr('dwa').value = '';
+    scr('dWhatsapp').value = '';
 
     var submitBtn = scr('donorFormSubmitBtn');
     if(submitBtn) submitBtn.textContent = '＋ பதிவை சேர்';
@@ -2469,7 +2528,6 @@ function editB(mob) {
             scr('dLoc').value = data.loc || '';
             scr('dBlood').value = data.blood || '';
             scr('dMob').value = mob;
-            scr('dwa').value = wa;
             
             // மொபைல் நம்பரை மாற்ற முடியாதவாறு லாக் செய்வுதல் (Edit மோடு)
             scr('dMob').readOnly = true;
@@ -2563,6 +2621,23 @@ function doMobileUpdate(){
   scr('curMobLabel').textContent = 'தற்போது: +91 ' + v;
   closeModal();
   showToast('மொபைல் நம்பர் அப்டேட் ஆனது ✅');
+}
+/* வெளியேறு (Logout) — கணக்கை நீக்காமல், வெறும் இந்த device-லிருந்து வெளியேறுவது.
+ * இதுவரை இந்த ஆப்பில் "கணக்கை நீக்கு" (நிரந்தரம்) மட்டுமே இருந்தது — அதனால் ஒரே
+ * device-ல் அடுத்த டோனர் பதிவு செய்ய முயலும்போது, முந்தைய டோனரின் தகவலே தொடர்ந்து
+ * காட்டப்பட்டு, பதிவு படிவம் தெரியாமல் போனது. */
+function doLogout(){
+  window.fbSignOut().catch(function(){}).then(function(){
+    myRecords = [];
+    if(scr('activeToggle')) scr('activeToggle').checked = false;
+    saveState();
+    closeModal();
+    showToast('வெளியேறிவிட்டீர்கள் 👋');
+    stack = ['home'];
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active','left'); });
+    scr('home').classList.add('active');
+    try{ history.replaceState({ appScreen: 'home' }, '', location.href); }catch(e){}
+  });
 }
 function openDelete(){
   var m = scr('modal');
@@ -2670,11 +2745,37 @@ function buildUpiUri(amount){
   return 'upi://pay?' + p;
 }
 
+/* UPI ஆப்பிலிருந்து திரும்பி வரும்போது (tab மீண்டும் visible ஆகும்போது), பணம்
+ * அனுப்பினீர்களா என்று பயனரிடமே கேட்கிறோம். UPI deep link-கள் இணையதளத்திற்கு
+ * பணம் சென்றதா இல்லையா என்று எந்த server-side confirmation-ஐயும் திருப்பி
+ * அனுப்புவதில்லை (proper payment gateway இல்லாமல்) — எனவே சுயமாக உறுதிப்படுத்துவதே
+ * நேர்மையான ஒரே வழி; "Payment Verified" என்று பொய்யாகக் காட்டப் போவதில்லை. */
+var upiHandoffActive = false;
+var upiHandoffAmount = null;
+
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible' && upiHandoffActive){
+    upiHandoffActive = false;
+    setTimeout(function(){ showUpiConfirmPrompt(upiHandoffAmount); }, 350);
+  }
+});
+
 /* Launch the installed UPI app.
    Android → intent:// with browser_fallback + package-agnostic chooser (any UPI app).
    iOS     → upi://pay (Safari hands off to installed UPI apps).                     */
 function launchUpi(amount){
   var upi = buildUpiUri(amount);
+  var handedOff = false;
+
+  function onVisChange(){
+    if(document.visibilityState === 'hidden'){
+      handedOff = true;
+      upiHandoffActive = true;
+      upiHandoffAmount = amount;
+    }
+  }
+  document.addEventListener('visibilitychange', onVisChange);
+  function stopWatching(){ document.removeEventListener('visibilitychange', onVisChange); }
   
   if(isAndroid()){
     var query = upi.substring('upi://pay?'.length);
@@ -2687,13 +2788,62 @@ function launchUpi(amount){
     a.click();
     document.body.removeChild(a);
 
-    // 2. Fallback
-    setTimeout(function(){ 
-      try { window.location.href = upi; } catch(e){} 
-    }, 5000);
+    // 2. Fallback — UPI ஆப் ஏதும் திறக்காவிட்டால் மட்டும் (பக்கம் hidden ஆகவில்லை எனில்).
+    //    முன்பு இது எப்போதும் இயங்கியது, இதனால் பயனர் GPay-க்குள் பணம் செலுத்திக்
+    //    கொண்டிருக்கும்போதே இந்த fallback மீண்டும் இயக்கி, GPay-யிலிருந்து வெளியே
+    //    தள்ளிவிட்டது — இதுவே "உடனே வெளியே வந்துவிடுகிறது" பிரச்சனையின் காரணம்.
+    setTimeout(function(){
+      stopWatching();
+      if(!handedOff && document.visibilityState !== 'hidden'){
+        try { window.location.href = upi; } catch(e){}
+      }
+      // handedOff === true எனில் பயனர் இப்போது UPI ஆப்பில் இருக்கிறார் — அவரை
+      // தொந்தரவு செய்யக் கூடாது; visibilitychange listener மேலே அவர் திரும்பி
+      // வரும்போது பணம் அனுப்பினீர்களா என்று கேட்கும்.
+    }, 2500);
   } else {
     window.location.href = upi;
+    setTimeout(stopWatching, 2500);
   }
+}
+
+/* பயனர் UPI ஆப்பிலிருந்து திரும்பி வந்ததும் — சுயமாக உறுதிப்படுத்தும் கேள்வி */
+function showUpiConfirmPrompt(amount){
+  var m = scr('modal');
+  m.textContent = '';
+  m.appendChild(el('div','grab'));
+  m.appendChild(el('h3', null, '🙏 நன்கொடை'));
+  m.appendChild(el('p','donate-lead','UPI ஆப்பிலிருந்து திரும்பி வந்துவிட்டீர்கள். பணம் அனுப்புவதை முடித்தீர்களா?'));
+
+  var yes = el('button','primary-btn','✅ ஆம், அனுப்பிவிட்டேன்');
+  yes.type = 'button';
+  yes.addEventListener('click', function(){ showUpiThankYou(amount); });
+  m.appendChild(yes);
+
+  var no = el('button','ghost-btn','❌ இல்லை / ரத்து செய்தேன்');
+  no.type = 'button';
+  no.addEventListener('click', function(){ closeModal(); });
+  m.appendChild(no);
+
+  openModal();
+}
+
+function showUpiThankYou(amount){
+  var m = scr('modal');
+  m.textContent = '';
+  m.appendChild(el('div','grab'));
+  m.appendChild(el('h3', null, '🎉 நன்றி!'));
+  var msg = amount ? ('உங்கள் ₹' + amount + ' நன்கொடை வெற்றிகரமாக செலுத்தப்பட்டது என பதிவு செய்யப்பட்டது. மனமார்ந்த நன்றி 🙏')
+                    : 'உங்கள் நன்கொடை வெற்றிகரமாக செலுத்தப்பட்டது என பதிவு செய்யப்பட்டது. மனமார்ந்த நன்றி 🙏';
+  m.appendChild(el('p','donate-lead', msg));
+  m.appendChild(el('p','donate-note','குறிப்பு: இது நீங்கள் உறுதிப்படுத்திய தகவல் — UPI பரிவர்த்தனைகளை இந்த ஆப் தானாக சரிபார்க்காது.'));
+
+  var close = el('button','primary-btn','சரி, மூடு');
+  close.type = 'button';
+  close.addEventListener('click', function(){ closeModal(); });
+  m.appendChild(close);
+
+  openModal();
 }
 
 /* Copy helper (clipboard API + textarea fallback) */
