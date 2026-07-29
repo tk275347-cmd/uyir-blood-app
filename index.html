@@ -2446,7 +2446,7 @@ function saveDonorToDB(nm, loc, bl, mob, wa) {
         var mobileNumber = '+91' + mob;
         
         // இங்கே 'dbWrite'-க்கு பதிலாக 'window.fbSet' முறை பயன்படுத்தப்பட்டுள்ளது
-        var recordRef = 'records/' + mob;
+        var recordPath = 'records/' + mob;
         
         window.fbDbSet(recordPath, { 
             name: nm, 
