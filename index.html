@@ -2448,7 +2448,7 @@ function saveDonorToDB(nm, loc, bl, mob, wa) {
         // இங்கே 'dbWrite'-க்கு பதிலாக 'window.fbSet' முறை பயன்படுத்தப்பட்டுள்ளது
         var recordRef = window.fbRef(db, 'records/' + mob);
         
-        window.fbSet(recordRef, { 
+        window.fbDbSet(recordRef, { 
             name: nm, 
             loc: loc, 
             blood: bl, 
