@@ -575,15 +575,6 @@
         </div>
         <div id="donorResults" aria-live="polite"></div>
       </div>
-       <!-- ரிப்போர்ட் செய்யும் பாப்-அப் / செக்ஷன் -->
-<div id="reportModal" style="display:none; padding: 15px; border: 1px solid #ff4d4d; border-radius: 5px; background: #fff5f5; margin-top: 10px;">
-    <h4>இந்த டோனரை ரிப்போர்ட் செய்ய:</h4>
-    <p>எதனால் இவரை ரிப்போர்ட் செய்கிறீர்கள் என்பதைக் குறிப்பிடவும்:</p>
-    <textarea id="reportReasonInput" placeholder="காரணத்தை இங்கே டைப் செய்யவும் (எ.கா: போன் எடுக்கவில்லை, தவறான தகவல்...)" rows="3" style="width: 100%; padding: 8px;"></textarea>
-    <br><br>
-    <button type="button" onclick="submitDonorReport()" style="background: #dc3545; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer;">சமர்ப்பிக்கவும் (Submit Report)</button>
-    <button type="button" onclick="closeReportModal()" style="padding: 8px 15px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">ரத்து செய்</button>
-</div>
     </section>
 
     <!-- ============ RECEIVER SETTINGS ============ -->
@@ -615,6 +606,11 @@
           <span class="li-tx"><span class="a">ஆப்பை பகிரவும்</span><span class="b">QR கோடு ஸ்கேன் செய்து டவுன்லோட் செய்யலாம்</span></span>
           <span class="arr" aria-hidden="true">›</span>
         </button>
+       <button class="list-item" type="button" onclick="doLogout()">
+          <span class="li-ic" aria-hidden="true">🚪</span>
+          <span class="li-tx"><span class="a">வெளியேறு</span><span class="b">Logout — கணக்கு நீக்கப்படாது</span></span>
+          <span class="arr" aria-hidden="true">›</span>
+       </button>
       </div>
     </section>
 
@@ -1451,20 +1447,34 @@ document.addEventListener('visibilitychange', function(){
 window.addEventListener('pagehide', function(){ saveState(); });
 
 /* ---------- Receiver flow ---------- */
-// 1. ரிசீவர் பட்டனை அழுத்தும்போது இந்த வெல்கம் பக்கம்/செக்ஷன் திறக்கும்
+// 1. ரிசீவர் பட்டனை அழுத்தும்போது அல்லது பக்கம் திறக்கும்போது இயங்கும் மெயின் பங்க்சன்
 function openReceiverWelcomePage() {
     console.log("Welcome page function running...");
     
-    // உங்கள் பழைய ஃபார்ம் அல்லது மற்ற செக்ஷன்களை மறைக்க
+    // *** மிக முக்கிய மாற்றம்: ரிசீவர் ஏற்கனவே பதிவு செய்து உள்ளே சென்றிருந்தால், 
+    // வெல்கம் பக்கத்தையோ ஃபார்மையோ காட்டாமல் நேராகத் தேடல் பகுதிக்குச் செல்ல வேண்டும் ***
+    var isRegistered = localStorage.getItem('receiverRegistered');
+    var currentUser = window.fbAuth && window.fbAuth.currentUser ? window.fbAuth.currentUser : null;
+
+    if (isRegistered === 'true' && currentUser) {
+        // ஏற்கனவே லாகின் செய்துவிட்டதால், நேரடியாகத் தேடல் பகுதிக்குச் செல்லவும்
+        if (typeof showReceiverDashboard === 'function') {
+            showReceiverDashboard(); // உங்களது தேடல் பகுதி / டேஷ்போர்டு பங்க்சன் பெயர்
+            return;
+        } else if (typeof go === 'function') {
+            go('receiverSearch'); // உங்களது ரவுட்டர் பங்க்சன் மூலம் தேடல் பக்கத்திற்குச் செல்ல
+            return;
+        }
+    }
+
+    // ஒருவேளை முதல்முறை என்றால் வழக்கம் போல் வெல்கம் பக்கத்தைக் காட்டுக
     var formSec = document.getElementById('receiverFormSection');
     if (formSec) formSec.style.display = 'none';
 
-    // நாம் உருவாக்கிய தனிப் பக்கத்தை ஸ்கிரீனில் காட்ட
     var welcomeSec = document.getElementById('receiverWelcomeSection');
     if (welcomeSec) {
         welcomeSec.style.display = 'block';
     } else {
-        // ஒருவேளை அந்த வெல்கம் செக்ஷன் HTML-ல் இல்லையென்றால், நேரடியாகவே ஃபார்மிற்குச் செல்ல:
         showReceiverFormDirectly();
     }
 }
@@ -1475,15 +1485,15 @@ function handleReceiverWelcomeClick() {
         showToast('தயவுசெய்து காத்திருக்கவும்... ⏳');
     }
     
-    // வெல்கம் பக்கத்தை மறைத்தல்
     var welcomeSec = document.getElementById('receiverWelcomeSection');
     if (welcomeSec) welcomeSec.style.display = 'none';
 
-    // பயனர் ஏற்கனவே லாகின் செய்துள்ளாரா எனப் பார்த்தல்
     var currentUser = window.fbAuth && window.fbAuth.currentUser ? window.fbAuth.currentUser : null;
 
     if (currentUser) {
-        checkUserExistingDataForReceiver(currentUser.uid);
+        // ஏற்கனவே லாகின் ஆகியிருந்தால் ஸ்டேட்டை சேமித்துவிட்டு நேராகத் தேடல் பகுதிக்குச் செல்லவும்
+        localStorage.setItem('receiverRegistered', 'true');
+        redirectToSearchPage();
     } else {
         // அநாமதேயமாக லாகின் செய்தல்
         if (window.signInAnonymously && window.fbAuth) {
@@ -1491,7 +1501,9 @@ function handleReceiverWelcomeClick() {
                 .then((result) => {
                     var user = result.user;
                     window.fbUser = user;
-                    checkUserExistingDataForReceiver(user.uid);
+                    // வெற்றிகரமாக லாகின் ஆனதும் லோக்கல் ஸ்டோரேஜில் சேமிக்க
+                    localStorage.setItem('receiverRegistered', 'true');
+                    redirectToSearchPage();
                 })
                 .catch((error) => {
                     console.error("Anonymous login error:", error);
@@ -1503,53 +1515,18 @@ function handleReceiverWelcomeClick() {
     }
 }
 
-// 3. டேட்டாபேஸில் இந்த யூசருக்கு ஏற்கனவே ரெக்கார்ட் உள்ளதா எனச் செக் செய்யும் பங்க்சன்
-function checkUserExistingDataForReceiver(userId) {
-    if (!window.fbDB || !window.fbRef) {
-        showReceiverFormDirectly();
-        return;
-    }
-
-    var recordsRef = window.fbRef(window.fbDB, 'records');
-    var q = window.fbQuery(recordsRef, window.fbOrderByChild('ownerUid'), window.fbEqualTo(userId));
-
-    window.fbGet(q).then((snapshot) => {
-        if (snapshot.exists && snapshot.exists()) {
-            var hasData = false;
-            snapshot.forEach((child) => {
-                if (child.val()) hasData = true;
-            });
-
-            if (hasData) {
-                if (typeof showToast === 'function') showToast('உங்கள் பழைய விவரங்கள் கண்டறியப்பட்டன! 👍');
-                if (typeof loadMyRecordsFromDB === 'function') {
-                    loadMyRecordsFromDB();
-                } else {
-                    showReceiverFormDirectly();
-                }
-            } else {
-                showReceiverFormDirectly();
-            }
-        } else {
-            showReceiverFormDirectly();
-        }
-    }).catch((error) => {
-        console.error("Data check error:", error);
-        showReceiverFormDirectly();
-    });
-}
-
-// 4. உண்மையான ஃபார்மை ஸ்கிரீனில் காட்டும் உதவிப் பங்க்சன்
-function showReceiverFormDirectly() {
-    if (typeof go === 'function') {
-        go('receiverReg'); // உங்களது பழைய கோடில் உள்ள முறைப்படி ஃபார்மை திறக்க
+// 3. நேராகத் தேடல் பகுதிக்கு அழைத்துச் செல்லும் உதவிப் பங்க்சன்
+function redirectToSearchPage() {
+    if (typeof showReceiverDashboard === 'function') {
+        showReceiverDashboard();
+    } else if (typeof go === 'function') {
+        go('receiverSearch'); // உங்களது தேடல் ஸ்கிரீன் பெயர்
     } else {
-        var formSection = document.getElementById('receiverFormSection');
-        if (formSection) {
-            formSection.style.display = 'block';
-        }
+        showReceiverFormDirectly();
     }
 }
+ 
+
  
  var DONORS = [];
 var messaged = {};   /* messaged[donorMob] = { reqId, accepted } once a message is sent */
@@ -1692,6 +1669,24 @@ function renderDonorResults(out){
     var note = el('div','locknote','🔒 மெசேஜ் அனுப்பினால் உடனே கால் பட்டன் செயல்படும்');
     note.id = 'note-' + key;
 
+       // ரிப்போர்ட் பட்டனை உருவாக்குதல்
+    var reportBtn = el('button', 'act-btn report-btn', '⚠️ ரிப்போர்ட்');
+    reportBtn.type = 'button';
+    reportBtn.id = 'report-' + key;
+    reportBtn.setAttribute('aria-expanded', 'false');
+    
+    // ரிப்போர்ட் பட்டனை அழுத்தும்போது இயங்கும் பங்க்சன்
+    reportBtn.addEventListener('click', function(){ 
+        if (typeof makeReport === 'function') {
+            makeReport(key, d.name); 
+        } else {
+            console.log("Report clicked for: ", key, d.name);
+            if (typeof showToast === 'function') {
+                showToast('ரிப்போர்ட் பட்டன் அழுத்தப்பட்டது ⚠️');
+            }
+        }
+    });
+   
     // ரிசீவர்-க்கான வாட்ஸ்அப் பட்டன் — டோனர் பதிவின்போது கொடுத்த whatsapp நம்பரைப் பயன்படுத்தி
     // நேரடியாக அவருடன் வாட்ஸ்அப் அரட்டையைத் திறக்கிறது. Message/Call-ஐப் போல் அல்லாமல்,
     // இது எப்போதும் சுதந்திரமாகச் செயல்படும் (எதற்காகவும் காத்திருக்க வேண்டாம்).
@@ -1706,6 +1701,7 @@ function renderDonorResults(out){
     actions.appendChild(callBtn);
     actions.appendChild(note);
     actions.appendChild(waBtn);
+   actions.appendChild(reportBtn);
     card.appendChild(actions);
 
     box.appendChild(card);
@@ -1833,6 +1829,24 @@ function checkTotalReportsAndBlock(donorId) {
         }
     });
 }
+
+ function receiverLogout(){
+  window.fbSignOut().catch(function(){}).then(function(){
+    // ரிசீவருக்காக லோக்கல் ஸ்டோரேஜ் குறிப்பை நீக்க
+    localStorage.removeItem('receiverRegistered');
+    
+    myRecords = [];
+    if(scr('activeToggle')) scr('activeToggle').checked = false;
+    saveState();
+    closeModal();
+    showToast('வெளியேறிவிட்டீர்கள் 👋');
+    stack = ['home'];
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active','left'); });
+    scr('home').classList.add('active');
+    try{ history.replaceState({ appScreen: 'home' }, '', location.href); }catch(e){}
+  });
+ }
+ 
 /* sendMessage() creates a REAL contact-request record in Firebase under
  * contactRequests/{donorMobile}/{requestId} so the donor sees it via the
  * notification bell on their dashboard. The receiver's Call button unlocks
