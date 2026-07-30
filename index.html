@@ -507,19 +507,15 @@
       </div>
     </section>
    
- <!-- அநாமதேய லாகின் செக்ஷன் -->
-<div class="anonymous-login-container" style="text-align: center; margin: 20px 0; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 8px;">
-    <h3>உங்களை வெளிப்படுத்த விரும்பவில்லையா?</h3>
-    <p style="color: #666; font-size: 14px; margin-bottom: 10px;">உங்கள் பெயரைக் காட்டாமல் அநாமதேயமாகத் தொடர இந்த பட்டனை அழுத்தவும்</p>
-    
-    <!-- அநாமதேய பட்டன் (இது நாம் முன்பு எழுதிய ஜாவாஸ்கிரிப்ட் பங்க்சனை அழைக்கும்) -->
-    <button type="button" class="btn-anonymous" onclick="loginAnonymouslyAndCheckData()" style="background: #28a745; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer;">
-        🕵️‍♂️ அநாமதேயமாகத் தொடரவும் (Login Anonymously)
-    </button>
-</div>
+
     <!-- ============ RECEIVER REGISTRATION ============ -->
     <section class="screen" id="receiverReg" aria-label="ரிசீவர் பதிவு">
       <div class="appbar">
+
+       <!-- உங்களுடைய பழைய ரிசீவர் பட்டனை இப்படி மாற்றவும் -->
+<button type="button" onclick="handleReceiverButtonClick()" class="btn-receiver">
+    Receiver (பெறுநர்)
+</button>
       
         <button class="back" type="button" onclick="history.back()" aria-label="பின் செல்">‹</button>
         <h1>ரிசீவர் பதிவு</h1>
@@ -1467,77 +1463,83 @@ window.addEventListener('pagehide', function(){ saveState(); });
 var DONORS = [];
 var messaged = {};   /* messaged[donorMob] = { reqId, accepted } once a message is sent */
 
- // அநாமதேய லாகின் மற்றும் டேட்டா செக்கிங் பங்க்சன்
-function loginAnonymouslyAndCheckData() {
-    if (!window.fbAuth) {
-        console.error("Firebase Auth not initialized!");
-        showToast("பேய்ச் (Firebase) இணைப்பு கிடைக்கவில்லை ❌");
-        return;
-    }
+// ==========================================================
+// ரிசீவர் பட்டனை அழுத்தும்போது இயங்கும் ஒருங்கிணைந்த பங்க்சன்
+// ==========================================================
+function handleReceiverButtonClick() {
+    showToast('தயவுசெய்து காத்திருக்கவும்... ⏳');
 
-    // 1. அநாமதேயமாக லாகின் செய்தல்
-    window.signInAnonymously(window.fbAuth)
-        .then((result) => {
-            var user = result.user;
-            window.fbUser = user;
-            console.log("Anonymous User ID:", user.uid);
-            
-            showToast('உள்நுழைவு வெற்றி! விவரங்களைத் சரிபார்க்கிறது... ⏳');
+    // 1. பயனர் ஏற்கனவே லாகின் செய்துள்ளாரா எனப் பார்த்தல்
+    var currentUser = window.fbAuth ? window.fbAuth.currentUser : null;
 
-            // 2. ரியல் டைம் டேட்டாபேஸில் இந்த யூசருக்கான டேட்டா ஏற்கனவே உள்ளதா எனச் சோதித்தல்
-            var recordsRef = window.fbRef(window.fbDB, 'records');
-            var q = window.fbQuery(recordsRef, window.fbOrderByChild('ownerUid'), window.fbEqualTo(user.uid));
-
-            window.fbGet(q).then((snapshot) => {
-                if (snapshot.exists && snapshot.exists()) {
-                    // --- ஏற்கனவே டேட்டா இருந்தால் (Old User) ---
-                    var hasData = false;
-                    snapshot.forEach((child) => {
-                        if (child.val()) hasData = true;
-                    });
-
-                    if (hasData) {
-                        showToast('உங்கள் பழைய விவரங்கள் கண்டறியப்பட்டன! 👍');
-                        
-                        // ஃபார்மைக் காட்டாமல், பழைய ரெக்கார்டுகளைக் காட்டும் பங்க்சனை இயக்கவும்
-                        if (typeof loadMyRecordsFromDB === 'function') {
-                            loadMyRecordsFromDB();
-                        }
-                        
-                        // அல்லது நேராக அந்தப் பக்கத்திற்கு மாற்றவும் (உதாரணமாக: showDashboard() அல்லது hideForm())
-                        // document.getElementById('formSection').style.display = 'none';
-                        // document.getElementById('recordsSection').style.display = 'block';
-                    } else {
-                        // டேட்டா காலியாக இருந்தால் ஃபார்மைக் காட்டுதல்
-                        showNewUserForm();
-                    }
-                } else {
-                    // --- புதிய யூசர் (First time) ---
-                    showToast('புதிய பயனர் - தயவுசெய்து ஃபார்மை நிரப்பவும் 📝');
-                    showNewUserForm();
-                }
-            }).catch((error) => {
-                console.error("Data fetch error:", error);
-                // பிழை ஏற்பட்டாலும் பாதுகாப்பாக ஃபார்மைக் காட்டுவது நல்லது
-                showNewUserForm();
+    if (currentUser) {
+        // ஏற்கனவே லாகின் ஆகியிருந்தால் நேரடியாக டேட்டாவைச் சரிபார்த்தல்
+        checkUserExistingData(currentUser.uid);
+    } else {
+        // இல்லை என்றால், ஆட்டோமேட்டிக்காக அநாமதேயமாக லாகின் செய்தல்
+        window.signInAnonymously(window.fbAuth)
+            .then((result) => {
+                var user = result.user;
+                window.fbUser = user;
+                console.log("Anonymous User ID:", user.uid);
+                
+                // லாகின் ஆனதும் டேட்டாவைச் சரிபார்த்தல்
+                checkUserExistingData(user.uid);
+            })
+            .catch((error) => {
+                console.error("Anonymous login error:", error);
+                showToast('உள்நுழைவு தோல்வியடைந்தது ❌');
             });
-
-        })
-        .catch((error) => {
-            console.error("Anonymous login error:", error.code, error.message);
-            showToast('அநாமதேய லாகின் தோல்வியடைந்தது ❌');
-        });
+    }
 }
 
-// புதிய யூசருக்கான ஃபார்மைக் காட்டும் சின்ன உதவிப் பங்க்சன்
-function showNewUserForm() {
-    // உங்களுடைய ஃபார்ம் டிஸ்ப்ளே கோடை இங்கே போட்டுக்கொள்ளவும்
-    // உதாரணத்திற்கு:
+// ==========================================================
+// ரியல் டைம் டேட்டாபேஸில் இந்த யூசருக்கு டேட்டா உள்ளதா எனச் செக் செய்யும் பங்க்சன்
+// ==========================================================
+function checkUserExistingData(userId) {
+    var recordsRef = window.fbRef(window.fbDB, 'records');
+    var q = window.fbQuery(recordsRef, window.fbOrderByChild('ownerUid'), window.fbEqualTo(userId));
+
+    window.fbGet(q).then((snapshot) => {
+        if (snapshot.exists && snapshot.exists()) {
+            var hasData = false;
+            snapshot.forEach((child) => {
+                if (child.val()) hasData = true;
+            });
+
+            if (hasData) {
+                // டேட்டா இருந்தால்: ஃபார்மைக் காட்டாமல் பழைய ரெக்கார்டைக் காட்டுவது
+                showToast('உங்கள் பழைய விவரங்கள் கண்டறியப்பட்டன! 👍');
+                if (typeof loadMyRecordsFromDB === 'function') {
+                    loadMyRecordsFromDB();
+                }
+            } else {
+                // டேட்டா இல்லை என்றால்: புதிய ஃபார்மைக் காட்டுவது
+                showToast('புதிய பயனர் - ஃபார்மை நிரப்பவும் 📝');
+                showReceiverFormDirectly();
+            }
+        } else {
+            // முதல் முறை என்பதால் ஃபார்மைக் காட்டுவது
+            showToast('புதிய பயனர் - ஃபார்மை நிரப்பவும் 📝');
+            showReceiverFormDirectly();
+        }
+    }).catch((error) => {
+        console.error("Data check error:", error);
+        showReceiverFormDirectly(); // பிழை ஏற்பட்டாலும் பாதுகாப்பாக ஃபார்மைக் காட்டுவது
+    });
+}
+
+// ==========================================================
+// ஃபார்மை மட்டும் ஸ்கிரீனில் காட்டும் உதவிப் பங்க்சன்
+// ==========================================================
+function showReceiverFormDirectly() {
     if (typeof showReceiverForm === 'function') {
         showReceiverForm();
     } else {
-        var formElm = document.getElementById('receiverForm'); // உங்கள் ஃபார்ம் ID
-        if (formElm) formElm.style.display = 'block';
+        var formSection = document.getElementById('receiverFormSection'); // உங்கள் ஃபார்ம் ID-ஐ இங்கே மாற்றிக் கொள்ளவும்
+        if (formSection) {
+            formSection.style.display = 'block';
+        }
     }
 }
 
