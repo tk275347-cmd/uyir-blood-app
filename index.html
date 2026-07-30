@@ -310,14 +310,7 @@
     font-size: 13px;
     font-weight: bold;
 }
-btn-anonymous {
-  background-color: #ffebee; /* வெளிர் சிவப்பு */
-    color: #02a4b6a;
-    padding: 20px 25px;
-    border-radius: 15px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: bold;
+
   /* Toggle */
   .toggle-card{background:#fff;border-radius:18px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.05);
     display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
@@ -513,10 +506,17 @@ btn-anonymous {
 </button>
       </div>
     </section>
- <!-- அநாமதேய லாகின் பட்டன் -->
-<button type="button" class="btn-anonymous" onclick="loginAnonymouslyForReceiver()">
-    அநாமதேயமாகத் தொடரவும் (Login Anonymously) 🕵️‍♂️
-</button>
+   
+ <!-- அநாமதேய லாகின் செக்ஷன் -->
+<div class="anonymous-login-container" style="text-align: center; margin: 20px 0; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 8px;">
+    <h3>உங்களை வெளிப்படுத்த விரும்பவில்லையா?</h3>
+    <p style="color: #666; font-size: 14px; margin-bottom: 10px;">உங்கள் பெயரைக் காட்டாமல் அநாமதேயமாகத் தொடர இந்த பட்டனை அழுத்தவும்</p>
+    
+    <!-- அநாமதேய பட்டன் (இது நாம் முன்பு எழுதிய ஜாவாஸ்கிரிப்ட் பங்க்சனை அழைக்கும்) -->
+    <button type="button" class="btn-anonymous" onclick="loginAnonymouslyAndCheckData()" style="background: #28a745; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer;">
+        🕵️‍♂️ அநாமதேயமாகத் தொடரவும் (Login Anonymously)
+    </button>
+</div>
     <!-- ============ RECEIVER REGISTRATION ============ -->
     <section class="screen" id="receiverReg" aria-label="ரிசீவர் பதிவு">
       <div class="appbar">
