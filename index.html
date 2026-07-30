@@ -2787,6 +2787,14 @@ function toggleActive(elm, silent){
     if(!silent) showToast('நீங்கள் இப்போது செயலற்ற நிலையில் 🔴');
   }
   saveState();
+ // ஃபைரபேஸ் டேட்டாபேஸில் ஸ்டேட்டஸை உடனே அப்டேட் செய்ய
+    if (window.fbDB && window.fbRef && window.fbUser && window.fbUser.uid) {
+        var userRecordRef = window.fbRef(window.fbDB, 'records/' + window.fbUser.uid);
+        window.fbUpdate(userRecordRef, { active: isActiveNow })
+            .catch((error) => {
+                console.error("Firebase status update failed: ", error);
+            });
+    }
 }
 /* ---------- Settings: mobile update & delete ---------- */
 // 1. மொபைல் அப்டேட் விண்டோ
