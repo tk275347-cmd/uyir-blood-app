@@ -954,10 +954,7 @@
  
   const app = initializeApp(firebaseConfig);
   const auth = getAuth();
-  const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('6LcGEVctAAAAAA24ovYgOXQGmVdmHKVBj34kILx4'),
-  isTokenAutoRefreshEnabled: true
-});
+
   window.fbAuth = getAuth(app);
   window.fbDB = getDatabase(app);
   window.fbReady = true;
