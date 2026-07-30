@@ -487,7 +487,7 @@
         <p class="sub-slogan">ஒரு துளி இரத்தம் — ஒரு உயிர்</p>
       </div>
       <div class="home-actions">
-        <button class="big-btn btn-receiver" type="button" onclick="go('receiverReg')" aria-label="ரிசீவர் — இரத்தம் தேவைப்படுபவர், டோனர்களை தேடுங்கள்">
+        <button class="big-btn btn-receiver" type="button" onclick="openReceiverWelcomePage()" aria-label="ரிசீவர் — இரத்தம் தேவைப்படுபவர், டோனர்களை தேடுங்கள்">
           <span class="ic" aria-hidden="true">🔍</span>
           <span>ரிசீவர்<small>இரத்தம் தேவைப்படுபவர் — டோனர்களை தேடுங்கள்</small></span>
         </button>
@@ -506,17 +506,22 @@
 </button>
       </div>
     </section>
+   <!-- 1. ரிசீவருக்கான தனிப் பக்கம் (இனி இதுதான் முதலில் திறக்கும்) -->
+<div id="receiverWelcomeSection" style="display: none; padding: 20px; text-align: center; background: #ffffff; border-radius: 8px;">
+    <h2>பெறுநர் (Receiver) பகுதி</h2>
+    <p style="color: #666; margin-bottom: 20px;">தொடர கீழே உள்ள பட்டனை அழுத்தவும்</p>
+    
+    <!-- அநாமதேய லாகின் பட்டன் -->
+    <button type="button" onclick="handleReceiverWelcomeClick()" style="background: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer;">
+        🕵️‍♂️ அநாமதேயமாகத் தொடரவும் (Continue Anonymously)
+    </button>
+</div>
    
 
     <!-- ============ RECEIVER REGISTRATION ============ -->
     <section class="screen" id="receiverReg" aria-label="ரிசீவர் பதிவு">
       <div class="appbar">
 
-       <!-- உங்களுடைய பழைய ரிசீவர் பட்டனை இப்படி மாற்றவும் -->
-<button type="button" onclick="handleReceiverButtonClick()" class="btn-receiver">
-    Receiver (பெறுநர்)
-</button>
-      
         <button class="back" type="button" onclick="history.back()" aria-label="பின் செல்">‹</button>
         <h1>ரிசீவர் பதிவு</h1>
       </div>
@@ -1463,28 +1468,39 @@ window.addEventListener('pagehide', function(){ saveState(); });
 var DONORS = [];
 var messaged = {};   /* messaged[donorMob] = { reqId, accepted } once a message is sent */
 
-// ==========================================================
-// ரிசீவர் பட்டனை அழுத்தும்போது இயங்கும் ஒருங்கிணைந்த பங்க்சன்
-// ==========================================================
-function handleReceiverButtonClick() {
-    showToast('தயவுசெய்து காத்திருக்கவும்... ⏳');
+// 1. முகப்பில் உள்ள 'Receiver' பட்டனை அழுத்தும்போது இந்தத் தனிப் பக்கம் திறக்கும்
+function openReceiverWelcomePage() {
+    // மற்ற பக்கங்கள் அல்லது ஃபார்ம்களை மறைக்க (உங்களுக்குத் தேவையாற்போல மாற்றிக்கொள்ளலாம்)
+    var formSec = document.getElementById('receiverFormSection');
+    if (formSec) formSec.style.display = 'none';
 
-    // 1. பயனர் ஏற்கனவே லாகின் செய்துள்ளாரா எனப் பார்த்தல்
+    // நாம் புதிதாக உருவாக்கிய தனிப் பக்கத்தை மட்டும் ஸ்கிரீனில் காட்டுகிறோம்
+    var welcomeSec = document.getElementById('receiverWelcomeSection');
+    if (welcomeSec) {
+        welcomeSec.style.display = 'block';
+    }
+}
+
+// 2. அந்தத் தனிப் பக்கத்தில் உள்ள 'அநாமதேயமாகத் தொடரவும்' பட்டனை அழுத்தும்போது இது இயங்கும்
+function handleReceiverWelcomeClick() {
+    showToast('தயவுசெய்து காத்திருக்கவும்... ⏳');
+    
+    // அந்த வெல்கம் பக்கத்தை இப்போது மறைத்து விடலாம்
+    var welcomeSec = document.getElementById('receiverWelcomeSection');
+    if (welcomeSec) welcomeSec.style.display = 'none';
+
+    // பயனர் ஏற்கனவே லாகின் செய்துள்ளாரா எனப் பார்த்தல்
     var currentUser = window.fbAuth ? window.fbAuth.currentUser : null;
 
     if (currentUser) {
-        // ஏற்கனவே லாகின் ஆகியிருந்தால் நேரடியாக டேட்டாவைச் சரிபார்த்தல்
-        checkUserExistingData(currentUser.uid);
+        checkUserExistingDataForReceiver(currentUser.uid);
     } else {
-        // இல்லை என்றால், ஆட்டோமேட்டிக்காக அநாமதேயமாக லாகின் செய்தல்
+        // இல்லையெனில் ஆட்டோமேட்டிக்காக அநாமதேயமாக லாகின் செய்தல்
         window.signInAnonymously(window.fbAuth)
             .then((result) => {
                 var user = result.user;
                 window.fbUser = user;
-                console.log("Anonymous User ID:", user.uid);
-                
-                // லாகின் ஆனதும் டேட்டாவைச் சரிபார்த்தல்
-                checkUserExistingData(user.uid);
+                checkUserExistingDataForReceiver(user.uid);
             })
             .catch((error) => {
                 console.error("Anonymous login error:", error);
@@ -1493,10 +1509,8 @@ function handleReceiverButtonClick() {
     }
 }
 
-// ==========================================================
-// ரியல் டைம் டேட்டாபேஸில் இந்த யூசருக்கு டேட்டா உள்ளதா எனச் செக் செய்யும் பங்க்சன்
-// ==========================================================
-function checkUserExistingData(userId) {
+// 3. டேட்டாபேஸில் இந்த யூசருக்கு ஏற்கனவே ரெக்கார்ட் உள்ளதா எனச் செக் செய்யும் பங்க்சன்
+function checkUserExistingDataForReceiver(userId) {
     var recordsRef = window.fbRef(window.fbDB, 'records');
     var q = window.fbQuery(recordsRef, window.fbOrderByChild('ownerUid'), window.fbEqualTo(userId));
 
@@ -1508,13 +1522,13 @@ function checkUserExistingData(userId) {
             });
 
             if (hasData) {
-                // டேட்டா இருந்தால்: ஃபார்மைக் காட்டாமல் பழைய ரெக்கார்டைக் காட்டுவது
+                // பழைய டேட்டா இருந்தால் அதை மட்டும் காட்டுவது (ஃபார்ம் வராது)
                 showToast('உங்கள் பழைய விவரங்கள் கண்டறியப்பட்டன! 👍');
                 if (typeof loadMyRecordsFromDB === 'function') {
                     loadMyRecordsFromDB();
                 }
             } else {
-                // டேட்டா இல்லை என்றால்: புதிய ஃபார்மைக் காட்டுவது
+                // டேட்டா இல்லை என்றால் புதிய ஃபார்மைக் காட்டுவது
                 showToast('புதிய பயனர் - ஃபார்மை நிரப்பவும் 📝');
                 showReceiverFormDirectly();
             }
@@ -1525,18 +1539,16 @@ function checkUserExistingData(userId) {
         }
     }).catch((error) => {
         console.error("Data check error:", error);
-        showReceiverFormDirectly(); // பிழை ஏற்பட்டாலும் பாதுகாப்பாக ஃபார்மைக் காட்டுவது
+        showReceiverFormDirectly();
     });
 }
 
-// ==========================================================
-// ஃபார்மை மட்டும் ஸ்கிரீனில் காட்டும் உதவிப் பங்க்சன்
-// ==========================================================
+// 4. உண்மையான ஃபார்மை ஸ்கிரீனில் காட்டும் உதவிப் பங்க்சன்
 function showReceiverFormDirectly() {
     if (typeof showReceiverForm === 'function') {
         showReceiverForm();
     } else {
-        var formSection = document.getElementById('receiverFormSection'); // உங்கள் ஃபார்ம் ID-ஐ இங்கே மாற்றிக் கொள்ளவும்
+        var formSection = document.getElementById('receiverFormSection'); // உங்கள் ஃபார்ம் ID
         if (formSection) {
             formSection.style.display = 'block';
         }
