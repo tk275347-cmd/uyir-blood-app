@@ -487,7 +487,7 @@
         <p class="sub-slogan">ஒரு துளி இரத்தம் — ஒரு உயிர்</p>
       </div>
       <div class="home-actions">
-        <button class="big-btn btn-receiver" type="button" onclick="go('openReceiverWelcomePage')" aria-label="ரிசீவர் — இரத்தம் தேவைப்படுபவர், டோனர்களை தேடுங்கள்">
+        <button class="big-btn btn-receiver" type="button" onclick="openReceiverWelcomePage()" aria-label="ரிசீவர் — இரத்தம் தேவைப்படுபவர், டோனர்களை தேடுங்கள்">
           <span class="ic" aria-hidden="true">🔍</span>
           <span>ரிசீவர்<small>இரத்தம் தேவைப்படுபவர் — டோனர்களை தேடுங்கள்</small></span>
         </button>
@@ -506,18 +506,7 @@
 </button>
       </div>
     </section>
-   <!-- 1. ரிசீவருக்கான தனிப் பக்கம் (இனி இதுதான் முதலில் திறக்கும்) -->
-<div id="receiverWelcomeSection" style="display: none; padding: 20px; text-align: center; background: #ffffff; border-radius: 8px;">
-    <h2>பெறுநர் (Receiver) பகுதி</h2>
-    <p style="color: #666; margin-bottom: 20px;">தொடர கீழே உள்ள பட்டனை அழுத்தவும்</p>
-    
-    <!-- அநாமதேய லாகின் பட்டன் -->
-    <button type="button" onclick="handleReceiverWelcomeClick()" style="background: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer;">
-        🕵️‍♂️ அநாமதேயமாகத் தொடரவும் (Continue Anonymously)
-    </button>
-</div>
-   
-
+ 
     <!-- ============ RECEIVER REGISTRATION ============ -->
     <section class="screen" id="receiverReg" aria-label="ரிசீவர் பதிவு">
       <div class="appbar">
