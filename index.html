@@ -2546,6 +2546,9 @@ function editB(mob) {
 /* 3. ஸ்டேட்டஸ் மாற்றுதல் - எந்த மாற்றமும் இல்லை, அப்படியே இருக்கலாம் */
 function toggleActive(elm, silent){
   var banner = scr('donorStatusBanner');
+ if (!banner) {
+ return;
+ }
   if(elm.checked){
     banner.className = 'status-banner status-on';
     banner.textContent = '🟢 நீங்கள் தற்போது ஆக்டிவ் — ரிசீவர்கள் உங்களை தேட முடியும்';
