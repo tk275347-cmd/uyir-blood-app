@@ -510,6 +510,10 @@
     <!-- ============ RECEIVER REGISTRATION ============ -->
     <section class="screen" id="receiverReg" aria-label="ரிசீவர் பதிவு">
       <div class="appbar">
+       <!-- அநாமதேய லாகின் பட்டன் -->
+<button type="button" class="btn-anonymous" onclick="loginAnonymouslyForReceiver()">
+    அநாமதேயமாகத் தொடரவும் (Login Anonymously) 🕵️‍♂️
+</button>
         <button class="back" type="button" onclick="history.back()" aria-label="பின் செல்">‹</button>
         <h1>ரிசீவர் பதிவு</h1>
       </div>
@@ -574,6 +578,15 @@
         </div>
         <div id="donorResults" aria-live="polite"></div>
       </div>
+     <!-- ரிப்போர்ட் செய்யும் பாப்-அப் / செக்ஷன் -->
+<div id="reportModal" style="display:none; padding: 15px; border: 1px solid #ff4d4d; border-radius: 5px; background: #fff5f5; margin-top: 10px;">
+    <h4>இந்த டோனரை ரிப்போர்ட் செய்ய:</h4>
+    <p>எதனால் இவரை ரிப்போர்ட் செய்கிறீர்கள் என்பதைக் குறிப்பிடவும்:</p>
+    <textarea id="reportReasonInput" placeholder="காரணத்தை இங்கே டைப் செய்யவும் (எ.கா: போன் எடுக்கவில்லை, தவறான தகவல்...)" rows="3" style="width: 100%; padding: 8px;"></textarea>
+    <br><br>
+    <button type="button" onclick="submitDonorReport()" style="background: #dc3545; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer;">சமர்ப்பிக்கவும் (Submit Report)</button>
+    <button type="button" onclick="closeReportModal()" style="padding: 8px 15px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">ரத்து செய்</button>
+</div>
     </section>
 
     <!-- ============ RECEIVER SETTINGS ============ -->
@@ -1052,7 +1065,7 @@ document.addEventListener('fb-auth-state-changed', function(e){
     window.fbGet(q)
         .then(function(snapshot) {
             var fetched = [];
-            if (snapshot.exists()) {
+            if (snapshot.exists && snapshot.exists()) {
                 snapshot.forEach(function(child) {
                     var v = child.val() || {};
                     fetched.push({
@@ -1447,6 +1460,80 @@ window.addEventListener('pagehide', function(){ saveState(); });
 var DONORS = [];
 var messaged = {};   /* messaged[donorMob] = { reqId, accepted } once a message is sent */
 
+ // அநாமதேய லாகின் மற்றும் டேட்டா செக்கிங் பங்க்சன்
+function loginAnonymouslyAndCheckData() {
+    if (!window.fbAuth) {
+        console.error("Firebase Auth not initialized!");
+        showToast("பேய்ச் (Firebase) இணைப்பு கிடைக்கவில்லை ❌");
+        return;
+    }
+
+    // 1. அநாமதேயமாக லாகின் செய்தல்
+    window.signInAnonymously(window.fbAuth)
+        .then((result) => {
+            var user = result.user;
+            window.fbUser = user;
+            console.log("Anonymous User ID:", user.uid);
+            
+            showToast('உள்நுழைவு வெற்றி! விவரங்களைத் சரிபார்க்கிறது... ⏳');
+
+            // 2. ரியல் டைம் டேட்டாபேஸில் இந்த யூசருக்கான டேட்டா ஏற்கனவே உள்ளதா எனச் சோதித்தல்
+            var recordsRef = window.fbRef(window.fbDB, 'records');
+            var q = window.fbQuery(recordsRef, window.fbOrderByChild('ownerUid'), window.fbEqualTo(user.uid));
+
+            window.fbGet(q).then((snapshot) => {
+                if (snapshot.exists && snapshot.exists()) {
+                    // --- ஏற்கனவே டேட்டா இருந்தால் (Old User) ---
+                    var hasData = false;
+                    snapshot.forEach((child) => {
+                        if (child.val()) hasData = true;
+                    });
+
+                    if (hasData) {
+                        showToast('உங்கள் பழைய விவரங்கள் கண்டறியப்பட்டன! 👍');
+                        
+                        // ஃபார்மைக் காட்டாமல், பழைய ரெக்கார்டுகளைக் காட்டும் பங்க்சனை இயக்கவும்
+                        if (typeof loadMyRecordsFromDB === 'function') {
+                            loadMyRecordsFromDB();
+                        }
+                        
+                        // அல்லது நேராக அந்தப் பக்கத்திற்கு மாற்றவும் (உதாரணமாக: showDashboard() அல்லது hideForm())
+                        // document.getElementById('formSection').style.display = 'none';
+                        // document.getElementById('recordsSection').style.display = 'block';
+                    } else {
+                        // டேட்டா காலியாக இருந்தால் ஃபார்மைக் காட்டுதல்
+                        showNewUserForm();
+                    }
+                } else {
+                    // --- புதிய யூசர் (First time) ---
+                    showToast('புதிய பயனர் - தயவுசெய்து ஃபார்மை நிரப்பவும் 📝');
+                    showNewUserForm();
+                }
+            }).catch((error) => {
+                console.error("Data fetch error:", error);
+                // பிழை ஏற்பட்டாலும் பாதுகாப்பாக ஃபார்மைக் காட்டுவது நல்லது
+                showNewUserForm();
+            });
+
+        })
+        .catch((error) => {
+            console.error("Anonymous login error:", error.code, error.message);
+            showToast('அநாமதேய லாகின் தோல்வியடைந்தது ❌');
+        });
+}
+
+// புதிய யூசருக்கான ஃபார்மைக் காட்டும் சின்ன உதவிப் பங்க்சன்
+function showNewUserForm() {
+    // உங்களுடைய ஃபார்ம் டிஸ்ப்ளே கோடை இங்கே போட்டுக்கொள்ளவும்
+    // உதாரணத்திற்கு:
+    if (typeof showReceiverForm === 'function') {
+        showReceiverForm();
+    } else {
+        var formElm = document.getElementById('receiverForm'); // உங்கள் ஃபார்ம் ID
+        if (formElm) formElm.style.display = 'block';
+    }
+}
+
 /* Build donor result cards with SAFE DOM APIs (no innerHTML string concat). */
 /* 1. ரிசீவர் பதிவு மற்றும் Regex சரிபார்ப்பு (திருத்தப்பட்டது) */
 function submitReceiver(){
@@ -1605,6 +1692,127 @@ function renderDonorResults(out){
   });
 }
 
+ // ==========================================
+// 1. ரிப்போர்ட் செய்யும் முறைகளுக்கான வேரியபிள்கள்
+// ==========================================
+window.reportingDonorId = null; 
+window.reportingDonorPhone = null;
+
+// ==========================================
+// 2. ரிப்போர்ட் பாப்-அப் (Modal) திறக்கும் பங்க்சன்
+// ==========================================
+function openReportModal(donorId, donorPhone) {
+    window.reportingDonorId = donorId;
+    window.reportingDonorPhone = donorPhone;
+    
+    var modal = document.getElementById('reportModal');
+    if (modal) {
+        modal.style.display = 'block';
+    }
+}
+
+// ==========================================
+// 3. ரிப்போர்ட் பாப்-அப்பை மூடும் பங்க்சன்
+// ==========================================
+function closeReportModal() {
+    var modal = document.getElementById('reportModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    var reasonInput = document.getElementById('reportReasonInput');
+    if (reasonInput) {
+        reasonInput.value = '';
+    }
+}
+
+// ==========================================
+// 4. ரிப்போர்ட்டைச் சமர்ப்பிக்கும் மெயின் பங்க்சன்
+// ==========================================
+function submitDonorReport() {
+    var reasonInput = document.getElementById('reportReasonInput');
+    var reason = reasonInput ? reasonInput.value.trim() : '';
+
+    if (!reason) {
+        showToast('தயவுசெய்து காரணத்தைத் டைப் செய்யவும்! ⚠️');
+        return;
+    }
+
+    if (!window.fbAuth || !window.fbAuth.currentUser) {
+        showToast('முதலில் உள்நுழைய வேண்டும்! ❌');
+        return;
+    }
+
+    var currentUserId = window.fbAuth.currentUser.uid;
+    var donorId = window.reportingDonorId;
+    
+    if (!donorId) {
+        showToast('டோனர் ஐடி கிடைக்கவில்லை! ❌');
+        return;
+    }
+
+    // A. இந்த யூசர் ஏற்கனவே இந்த டோனரை ரிப்போர்ட் செய்துள்ளாரா எனச் சோதித்தல்
+    var reportCheckRef = window.fbRef(window.fbDB, 'reports/' + donorId + '/' + currentUserId);
+
+    window.fbGet(reportCheckRef).then((snapshot) => {
+        if (snapshot.exists && snapshot.exists()) {
+            showToast('நீங்கள் ஏற்கனவே இந்த டோனரை ரிப்போர்ட் செய்துள்ளீர்கள்! 🚫');
+            closeReportModal();
+            return;
+        }
+
+        // B. புதிய ரிப்போர்ட்டைப் பதிவு செய்தல்
+        var reportData = {
+            reportedBy: currentUserId,
+            reason: reason,
+            timestamp: Date.now()
+        };
+
+        window.fbSet(reportCheckRef, reportData).then(() => {
+            showToast('ரிப்போர்ட் வெற்றிகரமாக அனுப்பப்பட்டது! 👍');
+            closeReportModal();
+
+            // C. மொத்த ரிப்போர்ட்களைச் சரிபார்த்து 3 ஆனதா எனப் பார்ப்பது
+            checkTotalReportsAndBlock(donorId);
+        });
+
+    }).catch((error) => {
+        console.error("Report error:", error);
+        showToast('ரிப்போர்ட் செய்வதில் பிழை ❌');
+    });
+}
+
+// ==========================================
+// 5. 3 ரிப்போர்ட்களுக்கு மேல் ஆனால் பிளாக் செய்யும் பங்க்சன்
+// ==========================================
+function checkTotalReportsAndBlock(donorId) {
+    var donorReportsRef = window.fbRef(window.fbDB, 'reports/' + donorId);
+
+    window.fbGet(donorReportsRef).then((snapshot) => {
+        if (snapshot.exists && snapshot.exists()) {
+            var totalReports = 0;
+            snapshot.forEach((child) => {
+                totalReports++;
+            });
+
+            console.log("Total reports for this donor:", totalReports);
+
+            // 3 அல்லது அதற்கு மேல் ரிப்போர்ட் இருந்தால் பிளாக் செய்யவும்
+            if (totalReports >= 3) {
+                var donorProfileRef = window.fbRef(window.fbDB, 'records/' + donorId);
+                
+                window.fbUpdate(donorProfileRef, {
+                    isBlocked: true,
+                    blockReason: "Received 3 or more user reports"
+                }).then(() => {
+                    showToast('இந்த எண் 3 புகார்கள் காரணமாக பிளாக் செய்யப்பட்டது! 🛑');
+                    
+                    // தேவைப்பட்டால் சர்ச் ரிசல்ட்டை உடனே ரெஃப்ரெஷ் செய்ய இங்கே அழைக்கலாம்
+                    // searchDonors(); 
+                });
+            }
+        }
+    });
+}
 /* sendMessage() creates a REAL contact-request record in Firebase under
  * contactRequests/{donorMobile}/{requestId} so the donor sees it via the
  * notification bell on their dashboard. The receiver's Call button unlocks
