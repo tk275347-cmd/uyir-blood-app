@@ -1451,52 +1451,65 @@ document.addEventListener('visibilitychange', function(){
 window.addEventListener('pagehide', function(){ saveState(); });
 
 /* ---------- Receiver flow ---------- */
-var DONORS = [];
-var messaged = {};   /* messaged[donorMob] = { reqId, accepted } once a message is sent */
-
-// 1. முகப்பில் உள்ள 'Receiver' பட்டனை அழுத்தும்போது இந்தத் தனிப் பக்கம் திறக்கும்
+// 1. ரிசீவர் பட்டனை அழுத்தும்போது இந்த வெல்கம் பக்கம்/செக்ஷன் திறக்கும்
 function openReceiverWelcomePage() {
-    // மற்ற பக்கங்கள் அல்லது ஃபார்ம்களை மறைக்க (உங்களுக்குத் தேவையாற்போல மாற்றிக்கொள்ளலாம்)
+    console.log("Welcome page function running...");
+    
+    // உங்கள் பழைய ஃபார்ம் அல்லது மற்ற செக்ஷன்களை மறைக்க
     var formSec = document.getElementById('receiverFormSection');
     if (formSec) formSec.style.display = 'none';
 
-    // நாம் புதிதாக உருவாக்கிய தனிப் பக்கத்தை மட்டும் ஸ்கிரீனில் காட்டுகிறோம்
+    // நாம் உருவாக்கிய தனிப் பக்கத்தை ஸ்கிரீனில் காட்ட
     var welcomeSec = document.getElementById('receiverWelcomeSection');
     if (welcomeSec) {
         welcomeSec.style.display = 'block';
+    } else {
+        // ஒருவேளை அந்த வெல்கம் செக்ஷன் HTML-ல் இல்லையென்றால், நேரடியாகவே ஃபார்மிற்குச் செல்ல:
+        showReceiverFormDirectly();
     }
 }
 
-// 2. அந்தத் தனிப் பக்கத்தில் உள்ள 'அநாமதேயமாகத் தொடரவும்' பட்டனை அழுத்தும்போது இது இயங்கும்
+// 2. வெல்கம் பக்கத்தில் உள்ள பட்டனை அழுத்தும்போது இது இயங்கும்
 function handleReceiverWelcomeClick() {
-    showToast('தயவுசெய்து காத்திருக்கவும்... ⏳');
+    if (typeof showToast === 'function') {
+        showToast('தயவுசெய்து காத்திருக்கவும்... ⏳');
+    }
     
-    // அந்த வெல்கம் பக்கத்தை இப்போது மறைத்து விடலாம்
+    // வெல்கம் பக்கத்தை மறைத்தல்
     var welcomeSec = document.getElementById('receiverWelcomeSection');
     if (welcomeSec) welcomeSec.style.display = 'none';
 
     // பயனர் ஏற்கனவே லாகின் செய்துள்ளாரா எனப் பார்த்தல்
-    var currentUser = window.fbAuth ? window.fbAuth.currentUser : null;
+    var currentUser = window.fbAuth && window.fbAuth.currentUser ? window.fbAuth.currentUser : null;
 
     if (currentUser) {
         checkUserExistingDataForReceiver(currentUser.uid);
     } else {
-        // இல்லையெனில் ஆட்டோமேட்டிக்காக அநாமதேயமாக லாகின் செய்தல்
-        window.signInAnonymously(window.fbAuth)
-            .then((result) => {
-                var user = result.user;
-                window.fbUser = user;
-                checkUserExistingDataForReceiver(user.uid);
-            })
-            .catch((error) => {
-                console.error("Anonymous login error:", error);
-                showToast('உள்நுழைவு தோல்வியடைந்தது ❌');
-            });
+        // அநாமதேயமாக லாகின் செய்தல்
+        if (window.signInAnonymously && window.fbAuth) {
+            window.signInAnonymously(window.fbAuth)
+                .then((result) => {
+                    var user = result.user;
+                    window.fbUser = user;
+                    checkUserExistingDataForReceiver(user.uid);
+                })
+                .catch((error) => {
+                    console.error("Anonymous login error:", error);
+                    showReceiverFormDirectly();
+                });
+        } else {
+            showReceiverFormDirectly();
+        }
     }
 }
 
 // 3. டேட்டாபேஸில் இந்த யூசருக்கு ஏற்கனவே ரெக்கார்ட் உள்ளதா எனச் செக் செய்யும் பங்க்சன்
 function checkUserExistingDataForReceiver(userId) {
+    if (!window.fbDB || !window.fbRef) {
+        showReceiverFormDirectly();
+        return;
+    }
+
     var recordsRef = window.fbRef(window.fbDB, 'records');
     var q = window.fbQuery(recordsRef, window.fbOrderByChild('ownerUid'), window.fbEqualTo(userId));
 
@@ -1508,19 +1521,16 @@ function checkUserExistingDataForReceiver(userId) {
             });
 
             if (hasData) {
-                // பழைய டேட்டா இருந்தால் அதை மட்டும் காட்டுவது (ஃபார்ம் வராது)
-                showToast('உங்கள் பழைய விவரங்கள் கண்டறியப்பட்டன! 👍');
+                if (typeof showToast === 'function') showToast('உங்கள் பழைய விவரங்கள் கண்டறியப்பட்டன! 👍');
                 if (typeof loadMyRecordsFromDB === 'function') {
                     loadMyRecordsFromDB();
+                } else {
+                    showReceiverFormDirectly();
                 }
             } else {
-                // டேட்டா இல்லை என்றால் புதிய ஃபார்மைக் காட்டுவது
-                showToast('புதிய பயனர் - ஃபார்மை நிரப்பவும் 📝');
                 showReceiverFormDirectly();
             }
         } else {
-            // முதல் முறை என்பதால் ஃபார்மைக் காட்டுவது
-            showToast('புதிய பயனர் - ஃபார்மை நிரப்பவும் 📝');
             showReceiverFormDirectly();
         }
     }).catch((error) => {
@@ -1531,15 +1541,18 @@ function checkUserExistingDataForReceiver(userId) {
 
 // 4. உண்மையான ஃபார்மை ஸ்கிரீனில் காட்டும் உதவிப் பங்க்சன்
 function showReceiverFormDirectly() {
-    if (typeof showReceiverForm === 'function') {
-        showReceiverForm();
+    if (typeof go === 'function') {
+        go('receiverReg'); // உங்களது பழைய கோடில் உள்ள முறைப்படி ஃபார்மை திறக்க
     } else {
-        var formSection = document.getElementById('receiverFormSection'); // உங்கள் ஃபார்ம் ID
+        var formSection = document.getElementById('receiverFormSection');
         if (formSection) {
             formSection.style.display = 'block';
         }
     }
 }
+ 
+ var DONORS = [];
+var messaged = {};   /* messaged[donorMob] = { reqId, accepted } once a message is sent */
 
 /* Build donor result cards with SAFE DOM APIs (no innerHTML string concat). */
 /* 1. ரிசீவர் பதிவு மற்றும் Regex சரிபார்ப்பு (திருத்தப்பட்டது) */
