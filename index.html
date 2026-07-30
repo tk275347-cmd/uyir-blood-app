@@ -2545,7 +2545,7 @@ function editB(mob) {
 
 /* 3. ஸ்டேட்டஸ் மாற்றுதல் - எந்த மாற்றமும் இல்லை, அப்படியே இருக்கலாம் */
 function toggleActive(elm, silent){
-  var banner = scr('donorStatusBanner');
+  var banner = document.getElementById('donorStatusBanner');
  if (!banner) {
  return;
  }
