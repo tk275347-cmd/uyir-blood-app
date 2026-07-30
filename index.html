@@ -1526,7 +1526,16 @@ function redirectToSearchPage() {
     }
 }
  
-
+function showReceiverFormDirectly() {
+ if (typeof go === 'function') {
+  go('receiverReg');
+ } else {
+ var formSection = document.getElementById('receiverFormSection');
+ if (formSection) {
+     formSection.style.display = 'block';
+    }
+   }
+ }
  
  var DONORS = [];
 var messaged = {};   /* messaged[donorMob] = { reqId, accepted } once a message is sent */
@@ -1674,19 +1683,8 @@ function renderDonorResults(out){
     reportBtn.type = 'button';
     reportBtn.id = 'report-' + key;
     reportBtn.setAttribute('aria-expanded', 'false');
+   reportBtn.addEventListener('click', function(){ openReportModal(key, d.Phone) });
     
-    // ரிப்போர்ட் பட்டனை அழுத்தும்போது இயங்கும் பங்க்சன்
-    reportBtn.addEventListener('click', function(){ 
-        if (typeof makeReport === 'function') {
-            makeReport(key, d.name); 
-        } else {
-            console.log("Report clicked for: ", key, d.name);
-            if (typeof showToast === 'function') {
-                showToast('ரிப்போர்ட் பட்டன் அழுத்தப்பட்டது ⚠️');
-            }
-        }
-    });
-   
     // ரிசீவர்-க்கான வாட்ஸ்அப் பட்டன் — டோனர் பதிவின்போது கொடுத்த whatsapp நம்பரைப் பயன்படுத்தி
     // நேரடியாக அவருடன் வாட்ஸ்அப் அரட்டையைத் திறக்கிறது. Message/Call-ஐப் போல் அல்லாமல்,
     // இது எப்போதும் சுதந்திரமாகச் செயல்படும் (எதற்காகவும் காத்திருக்க வேண்டாம்).
@@ -1724,7 +1722,9 @@ function openReportModal(donorId, donorPhone) {
     var modal = document.getElementById('reportModal');
     if (modal) {
         modal.style.display = 'block';
-    }
+    } else {
+     console.error("Report modal element not found");
+ }
 }
 
 // ==========================================
