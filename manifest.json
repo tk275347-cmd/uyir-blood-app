@@ -16,13 +16,13 @@
   "categories": ["health", "medical", "lifestyle"],
   "icons": [
     {
-      "src": "icons.png",
+      "src": "icon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons.png",
+      "src": "icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
