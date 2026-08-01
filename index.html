@@ -2030,6 +2030,7 @@ function verifyGoogle(mode){
 
   window.fbSignInPopup(provider)
     .then(function(result){
+     window.fbUser = result.user;
       var email = (result.user && result.user.email) || '';
       /* Save/merge donor profile in Realtime Database */
       dbWriteUser('donors', result.user.uid, {
@@ -2095,6 +2096,7 @@ function loginGmail(mode){   /* login path — REAL Firebase signInWithEmailAndP
   setLoading('lgGmailSubmit', true);
   window.fbSignInEmail(email, pw)
     .then(function(cred){
+     window.fbUser = cred.user;
       dbWriteUser('donors', cred.user.uid, { email: email, method: 'gmail',
         lastLogin: window.fbServerTimestamp() });
       dbWrite('events', { type: 'gmail_login', email: email });
@@ -2360,6 +2362,7 @@ if (!window.fbReady || !confirmationResult) {
   setLoading('otpVerifyBtn', true);
   confirmationResult.confirm(code)
     .then(function(result){
+     window.fbUser = result.user;
       dbWriteUser('donors', result.user.uid, { mobile: result.user.phoneNumber || '',
         method: 'mobile', lastLogin: window.fbServerTimestamp() });
       dbWrite('events', { type: 'otp_verified', mobile: result.user.phoneNumber || '', mode: mode });
