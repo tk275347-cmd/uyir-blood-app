@@ -576,6 +576,16 @@
         <div id="donorResults" aria-live="polite"></div>
       </div>
     </section>
+   <div id="reportModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;">
+  <div style="background:#fff; max-width:400px; margin:15% auto; padding:20px; border-radius:10px;">
+    <h3>ரிப்போர்ட் காரணம்</h3>
+    <textarea id="reportReasonInput" rows="3" style="width:100%;" placeholder="காரணத்தை எழுதவும்..."></textarea>
+    <div style="margin-top:10px; text-align:right;">
+      <button type="button" onclick="closeReportModal()">ரத்து</button>
+      <button type="button" onclick="submitDonorReport()">சமர்ப்பிக்க</button>
+    </div>
+  </div>
+</div>
 
     <!-- ============ RECEIVER SETTINGS ============ -->
     <section class="screen" id="receiverSettings" aria-label="ரிசீவர் செட்டிங்ஸ்">
@@ -930,7 +940,7 @@
   import {
     getAuth, signInWithPhoneNumber, GoogleAuthProvider, RecaptchaVerifier,
     signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-    signOut, deleteUser, sendPasswordResetEmail, onAuthStateChanged
+    signOut, deleteUser, sendPasswordResetEmail, onAuthStateChanged, singInAnonymously
   } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
   import {
     getDatabase, ref, set, push, get, query, orderByChild, equalTo, remove, update, onValue, serverTimestamp
@@ -959,6 +969,7 @@
 
   /* Thin wrappers so the plain (non-module) script below — which cannot
      use `import` — can call the modular functions by name via window.fb* */
+  window.signInAnonymously   = function () { return signInAnonymously(window.fbAuth); };
   window.fbSignInPopup   = function (provider) { return signInWithPopup(window.fbAuth, provider); };
   window.fbSignInEmail   = function (email, pw) { return signInWithEmailAndPassword(window.fbAuth, email, pw); };
   window.fbCreateEmail   = function (email, pw) { return createUserWithEmailAndPassword(window.fbAuth, email, pw); };
