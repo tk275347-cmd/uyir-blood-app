@@ -472,6 +472,7 @@
   ::-webkit-scrollbar{width:0;}
   }
 </style>
+ <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
   <!-- Offline indicator (aria-live so screen readers announce it) -->
@@ -999,8 +1000,10 @@ window.fbRef = ref; // 'ref' பங்க்ஷனையும் சேர்�
    * செய்தால், பழைய பதிவே தொடர்ந்து காட்டப்பட்டு புதிய டோனர் பதிவு படிவம் தெரியாமல்
    * போனது. இப்போது உண்மையான உள்நுழைவு நிலையை கண்காணித்து, Firebase-இல் இருந்தே
    * "என் பதிவுகள்" ஐ ஏற்றுகிறோம். */
+  window.fbAuthResolved = false;
   onAuthStateChanged(window.fbAuth, function(user){
     window.fbUser = user;
+    window.fbAuthResolved = true;
     document.dispatchEvent(new CustomEvent('fb-auth-state-changed', { detail: { user: user } }));
   });
 
@@ -1460,11 +1463,20 @@ window.addEventListener('pagehide', function(){ saveState(); });
 /* ---------- Receiver flow ---------- */
 // 1. ரிசீவர் பட்டனை அழுத்தும்போது அல்லது பக்கம் திறக்கும்போது இயங்கும் மெயின் பங்க்சன்
 function openReceiverWelcomePage() {
-    console.log("Welcome page function running...");
     
     // *** மிக முக்கிய மாற்றம்: ரிசீவர் ஏற்கனவே பதிவு செய்து உள்ளே சென்றிருந்தால், 
     // வெல்கம் பக்கத்தையோ ஃபார்மையோ காட்டாமல் நேராகத் தேடல் பகுதிக்குச் செல்ல வேண்டும் ***
     var isRegistered = localStorage.getItem('receiverRegistered');
+    // Auth state இன்னும் load ஆகல-னா, load ஆகும் வரை காத்திருங்க
+    if (isRegistered === 'true' && !window.fbAuthResolved) {
+        showToast('தயவுசெய்து காத்திருக்கவும்... ⏳');
+        document.addEventListener('fb-auth-state-changed', function handler(){
+            document.removeEventListener('fb-auth-state-changed', handler);
+            openReceiverWelcomePage();   // auth ready ஆனதும் மறுபடி try பண்ணுங்க
+        });
+        return;
+    }
+    // ...மீதி existing code அப்படியே தொடரும்
     var currentUser = window.fbAuth && window.fbAuth.currentUser ? window.fbAuth.currentUser : null;
 
     if (isRegistered === 'true' && currentUser) {
@@ -3174,11 +3186,13 @@ function openDonateModal(){
       chips.forEach(function(x){ x.classList.remove('sel'); x.setAttribute('aria-pressed','false'); });
       c.classList.add('sel'); c.setAttribute('aria-pressed','true');
       var ci = scr('customAmt'); if(ci) ci.value = '';
+      renderDonationQr(m, selectedAmount);
     });
     chips.push(c);
     amtWrap.appendChild(c);
   });
   m.appendChild(amtWrap);
+ renderDonationQr(m, selectedAmount || '');
 
   /* Custom amount */
   var custWrap = el('div','field');
@@ -3193,6 +3207,7 @@ function openDonateModal(){
     ci.value = onlyDigits(ci.value);
     if(ci.value){ selectedAmount = Number(ci.value);
       chips.forEach(function(x){ x.classList.remove('sel'); x.setAttribute('aria-pressed','false'); }); }
+    renderDonationQr(m, selectedAmount || '');
   });
   custWrap.appendChild(ci);
   m.appendChild(custWrap);
@@ -3217,6 +3232,47 @@ function openDonateModal(){
   openModal();
 }
 
+ /* UPI QR-ஐ காட்டி, அதுக்கு கீழ Download button வைக்கும் function */
+function renderDonationQr(container, amt) {
+  var old = document.getElementById('donateQrWrap');
+  if (old) old.remove();
+
+  var wrap = el('div', 'donate-qr-wrap');
+  wrap.id = 'donateQrWrap';
+  wrap.style.textAlign = 'center';
+  wrap.style.margin = '14px 0';
+
+  var canvas = document.createElement('canvas');
+  canvas.id = 'donateQrCanvas';
+  wrap.appendChild(canvas);
+  container.appendChild(wrap);
+
+  var uri = buildUpiUri(amt);
+  if (window.QRCode && window.QRCode.toCanvas) {
+    window.QRCode.toCanvas(canvas, uri, { width: 200, margin: 1 }, function (err) {
+      if (err) { console.error('QR உருவாக்க முடியவில்லை:', err); return; }
+
+      var dlBtn = el('button', 'ghost-btn', '⬇️ QR பதிவிறக்கு');
+      dlBtn.type = 'button';
+      dlBtn.style.marginTop = '8px';
+      dlBtn.addEventListener('click', function () {
+        try {
+          var dataUrl = canvas.toDataURL('image/png');
+          var a = document.createElement('a');
+          a.href = dataUrl;
+          a.download = 'uyir-blood-donate-qr.png';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          showToast('✅ QR உங்கள் மொபைலில் சேமிக்கப்பட்டது');
+        } catch (e) {
+          showToast('QR பதிவிறக்க முடியவில்லை ❌', true);
+        }
+      });
+      wrap.appendChild(dlBtn);
+    });
+  }
+}
 /* Decide flow: mobile → launch UPI app; desktop → show UPI ID + copy guidance */
 function proceedPay(){
   var amt = selectedAmount > 0 ? selectedAmount : '';
