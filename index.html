@@ -3256,47 +3256,36 @@ function renderDonationQr(container, amt) {
   wrap.style.margin = '14px 0';
 
   var qrHolder = document.createElement('div');
-  qrHolder.id = 'donateQrHolder';
-  wrap.appendChild(qrHolder);
-  container.appendChild(wrap);
+qrHolder.id = 'donateQrHolder';
+wrap.appendChild(qrHolder);
+container.appendChild(wrap);
 
-  if (!window.QRCode) {
-    wrap.appendChild(el('p', 'hint', '⚠️ QR காட்ட முடியவில்லை (library load ஆகல)'));
-    return;
+var uri = buildUpiUri(amt);
+var img = document.createElement('img');
+img.width = 200;
+img.height = 200;
+img.alt = 'UPI QR கோடு';
+img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&ecc=M&data=' + encodeURIComponent(uri);
+qrHolder.appendChild(img);
+
+var dlBtn = el('button', 'ghost-btn', '⬇️ QR பதிவிறக்கு');
+dlBtn.type = 'button';
+dlBtn.style.marginTop = '8px';
+dlBtn.addEventListener('click', function () {
+  try {
+    var a = document.createElement('a');
+    a.href = img.src;
+    a.download = 'uyir-blood-donate-qr.png';
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('✅ QR பதிவிறக்கம் தொடங்கியது');
+  } catch (e) {
+    showToast('QR பதிவிறக்க முடியவில்லை ❌', true);
   }
-
-  var uri = buildUpiUri(amt);
-  new QRCode(qrHolder, {
-    text: uri,
-    width: 200,
-    height: 200,
-    colorDark: '#000000',
-    colorLight: '#ffffff',
-   typeNumber: 0,
-    correctLevel: QRCode.CorrectLevel.m
-  });
-
-  var dlBtn = el('button', 'ghost-btn', '⬇️ QR பதிவிறக்கு');
-  dlBtn.type = 'button';
-  dlBtn.style.marginTop = '8px';
-  dlBtn.addEventListener('click', function () {
-    try {
-      var img = qrHolder.querySelector('img');
-      var canvas = qrHolder.querySelector('canvas');
-      var dataUrl = img ? img.src : (canvas ? canvas.toDataURL('image/png') : null);
-      if (!dataUrl) { showToast('QR இன்னும் தயார் ஆகல ❌', true); return; }
-      var a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = 'uyir-blood-donate-qr.png';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      showToast('✅ QR உங்கள் மொபைலில் சேமிக்கப்பட்டது');
-    } catch (e) {
-      showToast('QR பதிவிறக்க முடியவில்லை ❌', true);
-    }
-  });
-  wrap.appendChild(dlBtn);
+});
+wrap.appendChild(dlBtn);
 }
 /* Decide flow: mobile → launch UPI app; desktop → show UPI ID + copy guidance */
 function proceedPay(){
