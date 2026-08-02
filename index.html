@@ -2250,7 +2250,13 @@ function registerGmail(){   /* register path — REAL createUserWithEmailAndPass
 function loginMobile(mode){ startMobileOtp('login'); }
 function registerMobile(){ startMobileOtp('register'); }
 
-function startMobileOtp(mode){
+function startMobileOtp(mode) {
+  // நீங்கள் கேட்ட அலார்ட் மெசேஜ்
+  alert("இந்த ஆப் இப்பொழுது மெயின்டனன்ஸில் உள்ளது. நீங்கள் உதவியினால் மட்டுமே டொனேஷன் பண்ணால் மட்டுமே என்னால் இந்த இதை ஆக்டிவேட் செய்ய முடியும்.");
+  
+  return; // இது ஓடிபி கோடு ஃபர்தரா ரன் ஆகாமல் தடுத்துவிடும் (Stop OTP)
+ 
+ 
   var p = pfx(mode);
   clearErrors([p + 'MobileNum']);
   var mob = onlyDigits(scr(p + 'MobileNum').value);
