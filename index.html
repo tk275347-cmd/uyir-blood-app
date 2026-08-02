@@ -3240,7 +3240,6 @@ function openDonateModal(){
   openModal();
 }
 
- /* UPI QR-ஐ காட்டி, அதுக்கு கீழ Download button வைக்கும் function */
 function renderDonationQr(container, amt) {
   var old = document.getElementById('donateQrWrap');
   if (old) old.remove();
@@ -3256,30 +3255,38 @@ function renderDonationQr(container, amt) {
   container.appendChild(wrap);
 
   var uri = buildUpiUri(amt);
-  if (window.QRCode && window.QRCode.toCanvas) {
-    window.QRCode.toCanvas(canvas, uri, { width: 200, margin: 1 }, function (err) {
-      if (err) { console.error('QR உருவாக்க முடியவில்லை:', err); return; }
 
-      var dlBtn = el('button', 'ghost-btn', '⬇️ QR பதிவிறக்கு');
-      dlBtn.type = 'button';
-      dlBtn.style.marginTop = '8px';
-      dlBtn.addEventListener('click', function () {
-        try {
-          var dataUrl = canvas.toDataURL('image/png');
-          var a = document.createElement('a');
-          a.href = dataUrl;
-          a.download = 'uyir-blood-donate-qr.png';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          showToast('✅ QR உங்கள் மொபைலில் சேமிக்கப்பட்டது');
-        } catch (e) {
-          showToast('QR பதிவிறக்க முடியவில்லை ❌', true);
-        }
-      });
-      wrap.appendChild(dlBtn);
-    });
+  if (!window.QRCode || !window.QRCode.toCanvas) {
+    wrap.appendChild(el('p', 'hint', '⚠️ QR காட்ட முடியவில்லை (library load ஆகல)'));
+    return;   // library இல்லைனா இங்கேயே stop, ஆனா error தெரியும்
   }
+
+  window.QRCode.toCanvas(canvas, uri, { width: 200, margin: 1 }, function (err) {
+    if (err) {
+      console.error('QR உருவாக்க முடியவில்லை:', err);
+      wrap.appendChild(el('p', 'hint', '⚠️ QR உருவாக்க முடியவில்லை'));
+      return;
+    }
+
+    var dlBtn = el('button', 'ghost-btn', '⬇️ QR பதிவிறக்கு');
+    dlBtn.type = 'button';
+    dlBtn.style.marginTop = '8px';
+    dlBtn.addEventListener('click', function () {
+      try {
+        var dataUrl = canvas.toDataURL('image/png');
+        var a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = 'uyir-blood-donate-qr.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('✅ QR உங்கள் மொபைலில் சேமிக்கப்பட்டது');
+      } catch (e) {
+        showToast('QR பதிவிறக்க முடியவில்லை ❌', true);
+      }
+    });
+    wrap.appendChild(dlBtn);
+  });
 }
 /* Decide flow: mobile → launch UPI app; desktop → show UPI ID + copy guidance */
 function proceedPay(){
@@ -3331,7 +3338,7 @@ function showDesktopPay(amt){
 /* ================= /UPI Donation ================= */
 
 /* ================= Share App (QR code) ================= */
-var APP_SHARE_URL = 'https://tk275347-cmd.github.io/uyir-blood-app/';
+var APP_SHARE_URL = 'https://uyir-blood-app.web.app/';
 
 function openShareApp(){
   var m = scr('modal');
@@ -3343,17 +3350,17 @@ function openShareApp(){
 
   var qrWrap = el('div','share-qr-wrap');
   var qrImg = document.createElement('img');
-  qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' + encodeURIComponent( "https://tk275347-cmd.github.io/uyir-blood-app/" );
+  qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' + encodeURIComponent( "https://uyir-blood-app.web.app/" );
   qrImg.alt = 'ஆப் QR கோடு';
   qrImg.loading = 'lazy';
   qrWrap.appendChild(qrImg);
   m.appendChild(qrWrap);
 
-  m.appendChild(el('div','share-link-box', "https://tk275347-cmd.github.io/uyir-blood-app/" ));
+  m.appendChild(el('div','share-link-box', "https://uyir-blood-app.web.app/" ));
 
   var copyBtn = el('button','primary-btn','📋 லிங்க் நகலெடு');
   copyBtn.type = 'button';
-  copyBtn.addEventListener('click', function(){ copyText( "https://tk275347-cmd.github.io/uyir-blood-app/", '✅ லிங்க் நகலெடுக்கப்பட்டது' );
+  copyBtn.addEventListener('click', function(){ copyText( "https://uyir-blood-app.web.app/", '✅ லிங்க் நகலெடுக்கப்பட்டது' );
                                                          });
   m.appendChild(copyBtn);
 
@@ -3361,7 +3368,7 @@ function openShareApp(){
     var shareBtn = el('button','ghost-btn','📤 பகிர்');
     shareBtn.type = 'button';
     shareBtn.addEventListener('click', function(){
-      navigator.share({ title: 'உயிர்காக்கும் இரத்தம் தானம்', text: 'இந்த இரத்த தான ஆப்பை பயன்படுத்துங்கள்:', url: 'https://tk275347-cmd.github.io/uyir-blood-app/' })
+      navigator.share({ title: 'உயிர்காக்கும் இரத்தம் தானம்', text: 'இந்த இரத்த தான ஆப்பை பயன்படுத்துங்கள்:', url: 'https://uyir-blood-app.web.app/' })
         .catch(function(){ /* user cancelled — ignore */ });
     });
     m.appendChild(shareBtn);
