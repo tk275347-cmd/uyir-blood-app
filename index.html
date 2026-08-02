@@ -2817,7 +2817,8 @@ function toggleActive(elm, silent){
  if (!banner) {
  return;
  }
-  if(elm.checked){
+ var isActiveNow = elm.checked;
+  if(isActiveNow){
     banner.className = 'status-banner status-on';
     banner.textContent = '🟢 நீங்கள் தற்போது ஆக்டிவ் — ரிசீவர்கள் உங்களை தேட முடியும்';
     if(!silent) showToast('நீங்கள் இப்போது ஆக்டிவ் 🟢');
@@ -2827,14 +2828,21 @@ function toggleActive(elm, silent){
     if(!silent) showToast('நீங்கள் இப்போது செயலற்ற நிலையில் 🔴');
   }
   saveState();
+ var mob = (myRecords && myRecords.length > 0) ? myRecords[0].mob : window.editingMob;
  // ஃபைரபேஸ் டேட்டாபேஸில் ஸ்டேட்டஸை உடனே அப்டேட் செய்ய
-    if (window.fbDB && window.fbRef && window.fbUser && window.fbUser.uid) {
-        var userRecordRef = window.fbRef(window.fbDB, 'records/' + window.fbUser.uid);
+    if (window.fbDB && window.fbRef && window.fbUpdate && mob) {
+        var userRecordRef = window.fbRef(window.fbDB, 'records/' + mob);
         window.fbUpdate(userRecordRef, { active: isActiveNow })
-            .catch((error) => {
-                console.error("Firebase status update failed: ", error);
-            });
-    }
+             .then(() => {
+              if(!silent) console.log('Status DB-ல update ஆகிடுச்சு ✅');
+          })
+          .catch((error) => {
+              console.error("Firebase status update failed: ", error);
+              if(!silent) showToast('ஸ்டேட்டஸ் Save ஆகல ❌', true);
+          });
+  } else {
+      console.warn('Status update: mob number கிடைக்கல, DB update skip ஆச்சு');
+  }
 }
 /* ---------- Settings: mobile update & delete ---------- */
 // 1. மொபைல் அப்டேட் விண்டோ
