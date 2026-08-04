@@ -622,13 +622,6 @@
           <span class="li-tx"><span class="a">வெளியேறு</span><span class="b">Logout — கணக்கு நீக்கப்படாது</span></span>
           <span class="arr" aria-hidden="true">›</span>
        </button>
-       <div class="about-owner-box" style="background: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
-  <h3 style="color: #d9534f; margin-bottom: 10px;">👤 ஆப் உருவாக்கியவர் (Owner Details)</h3>
-  <p style="margin: 5px 0; font-size: 15px;"><strong>பெயர் (Name):</strong> தமிழரசன்</p>
-  <p style="margin: 5px 0; font-size: 15px;"><strong>மொபைல் எண் (Mobile):</strong> <a href="tel:+919952024364" style="color: #0275d8; text-decoration: none;">+919952024364</a></p>
-  <p style="margin: 5px 0; font-size: 15px;"><strong>மின்னஞ்சல் (Email):</strong> <a href="mailto: tk275347@gmail.com" style="color: #0275d8; text-decoration: none;">tk275347@gmail.com</a></p>
-  <p style="font-size: 13px; color: #666; margin-top: 10px;">இந்த ஆப் பராமரிப்பு மற்றும் டொனேஷன் பற்றிய விவரங்களுக்கு எங்களைத் தொடர்பு கொள்ளவும்.</p>
-       </div> 
       </div>
     </section>
 
@@ -923,13 +916,6 @@
           <span class="li-tx"><span class="a">கணக்கை நீக்கு</span><span class="b">Account Delete — நிரந்தரமாக நீக்கப்படும்</span></span>
           <span class="arr" aria-hidden="true">›</span>
         </button>
-       <div class="about-owner-box" style="background: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
-  <h3 style="color: #d9534f; margin-bottom: 10px;">👤 ஆப் உருவாக்கியவர் (Owner Details)</h3>
-  <p style="margin: 5px 0; font-size: 15px;"><strong>பெயர் (Name):</strong> தமிழரசன்</p>
-  <p style="margin: 5px 0; font-size: 15px;"><strong>மொபைல் எண் (Mobile):</strong> <a href="tel:+919952024364" style="color: #0275d8; text-decoration: none;">+919952024364</a></p>
-  <p style="margin: 5px 0; font-size: 15px;"><strong>மின்னஞ்சல் (Email):</strong> <a href="mailto: tk275347@gmail.com" style="color: #0275d8; text-decoration: none;">tk275347@gmail.com</a></p>
-  <p style="font-size: 13px; color: #666; margin-top: 10px;">இந்த ஆப் பராமரிப்பு மற்றும் டொனேஷன் பற்றிய விவரங்களுக்கு எங்களைத் தொடர்பு கொள்ளவும்.</p>
-       </div>
       </div>
     </section>
 
@@ -1097,6 +1083,17 @@ document.addEventListener('fb-auth-state-changed', function(e){
             myRecords = fetched;
             renderMyRecords();
             saveState();
+            /* toggleActive() records load ஆவதற்கு முன்பே அழுத்தப்பட்டிருந்தால்,
+             * அந்த pending status-ஐ இப்போது load ஆன records எல்லாவற்றுக்கும் apply செய்யவும். */
+            if (typeof window.pendingActiveStatus === 'boolean') {
+                var toApply = window.pendingActiveStatus;
+                window.pendingActiveStatus = null;
+                myRecords.forEach(function(rec){
+                    if (!rec || !rec.mob) return;
+                    window.fbUpdate(window.fbRef(window.fbDB, 'records/' + rec.mob), { active: toApply })
+                        .catch(function(error){ console.error("Pending status update failed: ", error); });
+                });
+            }
         })
         .catch(function(err) {
             console.error("தரவை எடுக்க முடியவில்லை:", err);
@@ -1475,45 +1472,23 @@ document.addEventListener('visibilitychange', function(){
 window.addEventListener('pagehide', function(){ saveState(); });
 
 /* ---------- Receiver flow ---------- */
-// 1. ரிசீவர் பட்டனை அழுத்தும்போது அல்லது பக்கம் திறக்கும்போது இயங்கும் மெயின் பங்க்சன்
+// 1. ரிசீவர் பட்டனை அழுத்தும்போது இயங்கும் மெயின் பங்க்சன்
 function openReceiverWelcomePage() {
-    
-    // *** மிக முக்கிய மாற்றம்: ரிசீவர் ஏற்கனவே பதிவு செய்து உள்ளே சென்றிருந்தால், 
-    // வெல்கம் பக்கத்தையோ ஃபார்மையோ காட்டாமல் நேராகத் தேடல் பகுதிக்குச் செல்ல வேண்டும் ***
-    var isRegistered = localStorage.getItem('receiverRegistered');
-    // Auth state இன்னும் load ஆகல-னா, load ஆகும் வரை காத்திருங்க
-    if (isRegistered === 'true' && !window.fbAuthResolved) {
-        showToast('தயவுசெய்து காத்திருக்கவும்... ⏳');
-        document.addEventListener('fb-auth-state-changed', function handler(){
-            document.removeEventListener('fb-auth-state-changed', handler);
-            openReceiverWelcomePage();   // auth ready ஆனதும் மறுபடி try பண்ணுங்க
-        });
+
+    // ஒருமுறை படிவம் நிரப்பி submit செய்திருந்தால் (localStorage flag + currentReceiver
+    // தகவல் இரண்டும் இருந்தால்) — படிவத்தை மீண்டும் காட்டாமல் நேரடியாக தேடல்
+    // பகுதிக்குச் செல்லவும்.
+    var isRegistered = localStorage.getItem('receiverRegistered') === 'true';
+    var hasReceiverInfo = !!(window.currentReceiver && window.currentReceiver.mobile);
+
+    if (isRegistered && hasReceiverInfo) {
+        if (typeof searchDonors === 'function') searchDonors();
+        go('receiverSearch');
         return;
     }
-    // ...மீதி existing code அப்படியே தொடரும்
-    var currentUser = window.fbAuth && window.fbAuth.currentUser ? window.fbAuth.currentUser : null;
 
-    if (isRegistered === 'true' && currentUser) {
-        // ஏற்கனவே லாகின் செய்துவிட்டதால், நேரடியாகத் தேடல் பகுதிக்குச் செல்லவும்
-        if (typeof showReceiverDashboard === 'function') {
-            showReceiverDashboard(); // உங்களது தேடல் பகுதி / டேஷ்போர்டு பங்க்சன் பெயர்
-            return;
-        } else if (typeof go === 'function') {
-            go('receiverSearch'); // உங்களது ரவுட்டர் பங்க்சன் மூலம் தேடல் பக்கத்திற்குச் செல்ல
-            return;
-        }
-    }
-
-    // ஒருவேளை முதல்முறை என்றால் வழக்கம் போல் வெல்கம் பக்கத்தைக் காட்டுக
-    var formSec = document.getElementById('receiverFormSection');
-    if (formSec) formSec.style.display = 'none';
-
-    var welcomeSec = document.getElementById('receiverWelcomeSection');
-    if (welcomeSec) {
-        welcomeSec.style.display = 'block';
-    } else {
-        showReceiverFormDirectly();
-    }
+    // முதல் முறை (அல்லது தகவல் இல்லாத நிலையில்) — பதிவு படிவத்தைக் காட்டவும்
+    showReceiverFormDirectly();
 }
 
 // 2. வெல்கம் பக்கத்தில் உள்ள பட்டனை அழுத்தும்போது இது இயங்கும்
@@ -1616,6 +1591,10 @@ function submitReceiver(){
   // இந்த ரிசீவரின் விவரங்களை நினைவில் வைக்கிறோம் — மெசேஜ்/கால் ஃபீச்சருக்கு தேவை
   window.currentReceiver = { name: nm, mobile: '+91' + mob, whatsapp: '+91' + wa };
   if(typeof saveState === 'function') saveState();
+  /* ரிசீவர் ஒருமுறை படிவத்தை நிரப்பிவிட்டார் என்று குறித்து வைக்கிறோம் —
+   * இதனால் அடுத்த முறை அவர் "ரிசீவர்" பட்டனை அழுத்தும்போது படிவம் மீண்டும்
+   * காட்டப்படாமல், நேரடியாக தேடல் பகுதிக்கே செல்வார் (openReceiverWelcomePage() பாருங்க). */
+  try{ localStorage.setItem('receiverRegistered', 'true'); }catch(e){}
   
   setTimeout(function(){
     setLoading('rcvSubmit', false);
@@ -1871,7 +1850,8 @@ function checkTotalReportsAndBlock(donorId) {
   window.fbSignOut().catch(function(){}).then(function(){
     // ரிசீவருக்காக லோக்கல் ஸ்டோரேஜ் குறிப்பை நீக்க
     localStorage.removeItem('receiverRegistered');
-    
+    window.currentReceiver = null;
+
     myRecords = [];
     if(scr('activeToggle')) scr('activeToggle').checked = false;
     saveState();
@@ -2848,20 +2828,40 @@ function toggleActive(elm, silent){
     if(!silent) showToast('நீங்கள் இப்போது செயலற்ற நிலையில் 🔴');
   }
   saveState();
- var mob = (myRecords && myRecords.length > 0) ? myRecords[0].mob : window.editingMob;
- // ஃபைரபேஸ் டேட்டாபேஸில் ஸ்டேட்டஸை உடனே அப்டேட் செய்ய
-    if (window.fbDB && window.fbRef && window.fbUpdate && mob) {
-        var userRecordRef = window.fbRef(window.fbDB, 'records/' + mob);
-        window.fbUpdate(userRecordRef, { active: isActiveNow })
-             .then(() => {
-              if(!silent) console.log('Status DB-ல update ஆகிடுச்சு ✅');
-          })
-          .catch((error) => {
-              console.error("Firebase status update failed: ", error);
-              if(!silent) showToast('ஸ்டேட்டஸ் Save ஆகல ❌', true);
-          });
+  // ஃபைரபேஸ் டேட்டாபேஸில் ஸ்டேட்டஸை உடனே அப்டேட் செய்ய
+  if (!(window.fbDB && window.fbRef && window.fbUpdate)) {
+      console.warn('Status update: Firebase DB இன்னும் ready இல்லை, DB update skip ஆச்சு');
+      return;
+  }
+  /* பழைய கோடு myRecords[0].mob ஒன்றை மட்டும் பயன்படுத்தியது. myRecords இன்னும்
+   * Firebase-இல் இருந்து load ஆகாத (loadMyRecordsFromDB() முடியாத) நேரத்தில் toggle
+   * அழுத்தினால் mob = undefined ஆகிவிடும் — அப்போது update-ஏ அனுப்பப்படாமல் தான்
+   * skip ஆனது, அதனால் தான் on/off எதுவானாலும் DB-ல் எப்போதும் active:false ஆகவே
+   * தங்கியது. இப்போது (1) உள்ள எல்லா records-ஐயும் அப்டேட் செய்யும், (2) records
+   * இன்னும் load ஆகவில்லை என்றால் pending status-ஐ வைத்து load முடிந்ததும் apply
+   * செய்யும். */
+  if (myRecords && myRecords.length > 0) {
+      myRecords.forEach(function(rec){
+          if (!rec || !rec.mob) return;
+          var recordRef = window.fbRef(window.fbDB, 'records/' + rec.mob);
+          window.fbUpdate(recordRef, { active: isActiveNow })
+              .then(function(){
+                  if(!silent) console.log('Status DB-ல update ஆகிடுச்சு ✅ (' + rec.mob + ')');
+              })
+              .catch(function(error){
+                  console.error("Firebase status update failed: ", error);
+                  if(!silent) showToast('ஸ்டேட்டஸ் Save ஆகல ❌', true);
+              });
+      });
+      window.pendingActiveStatus = null;
+  } else if (window.editingMob) {
+      var editRef = window.fbRef(window.fbDB, 'records/' + window.editingMob);
+      window.fbUpdate(editRef, { active: isActiveNow }).catch(function(error){
+          console.error("Firebase status update failed: ", error);
+      });
   } else {
-      console.warn('Status update: mob number கிடைக்கல, DB update skip ஆச்சு');
+      console.warn('Status update: records இன்னும் load ஆகல், pending-ஆ வைத்து load முடிந்ததும் apply செய்யும்');
+      window.pendingActiveStatus = isActiveNow;
   }
 }
 /* ---------- Settings: mobile update & delete ---------- */
@@ -2982,12 +2982,38 @@ function doDelete(){
     }, 800);
   }
 
+  /* donor-ன் தேடலில் தெரியும் அனைத்து 'records/{mob}' entries-ஐயும் (ஒன்றுக்கு மேற்பட்ட
+   * எண்களில் பதிவு செய்திருந்தாலும் சரி) கண்டுபிடித்து நீக்கும் ஹெல்பர்.
+   * இதுவரை 'donors/' + uid மட்டும் நீக்கப்பட்டு வந்தது — ஆனால் ரிசீவர்கள் தேடும்
+   * உண்மையான டேட்டா 'records/' + mob-ல் தான் இருக்கிறது, அதனால் அது நீக்கப்படாமலேயே
+   * இருந்தது. deleteUser()-க்கு முன்பே இதைச் செய்ய வேண்டும் — இல்லையெனில் auth token
+   * போய்விட்டதால் DB rules (ownerUid == auth.uid) delete-ஐ தடுக்கும். */
+  function removeAllDonorRecords(uid){
+    if(!window.fbReady || !window.fbDB || !window.fbRef || !window.fbQuery) return Promise.resolve();
+    var recordsRef = window.fbRef(window.fbDB, 'records');
+    var q = window.fbQuery(recordsRef, window.fbOrderByChild('ownerUid'), window.fbEqualTo(uid));
+    return window.fbGet(q).then(function(snapshot){
+      var jobs = [];
+      if(snapshot.exists && snapshot.exists()){
+        snapshot.forEach(function(child){
+          jobs.push(window.fbDbRemove('records/' + child.key).catch(function(err){
+            console.warn('record delete failed:', child.key, err && err.message);
+          }));
+        });
+      }
+      return Promise.all(jobs);
+    }).catch(function(err){ console.warn('records lookup for delete failed:', err && err.message); });
+  }
+
   if(user && window.fbReady){
     var uid = user.uid;
-    /* remove the donor's public record so they stop appearing in searches */
-    if(window.fbDbRemove){ window.fbDbRemove('donors/' + uid).catch(function(){}); }
 
-    window.fbDeleteUser(user)
+    removeAllDonorRecords(uid).then(function(){
+      /* legacy profile node clean-up */
+      if(window.fbDbRemove){ return window.fbDbRemove('donors/' + uid).catch(function(){}); }
+    }).then(function(){
+      return window.fbDeleteUser(user);
+    })
       .then(function(){
         return window.fbSignOut().catch(function(){});
       })
@@ -3270,35 +3296,46 @@ function renderDonationQr(container, amt) {
   wrap.style.margin = '14px 0';
 
   var qrHolder = document.createElement('div');
-qrHolder.id = 'donateQrHolder';
-wrap.appendChild(qrHolder);
-container.appendChild(wrap);
+  qrHolder.id = 'donateQrHolder';
+  wrap.appendChild(qrHolder);
+  container.appendChild(wrap);
 
-var img = document.createElement('img');
-img.width = 200;
-img.height = 200;
-img.alt = 'UPI QR கோடு';
-img.src = 'upi-qr.png';
-qrHolder.appendChild(img);
-
-var dlBtn = el('button', 'ghost-btn', '⬇️ QR பதிவிறக்கு');
-dlBtn.type = 'button';
-dlBtn.style.marginTop = '8px';
-dlBtn.addEventListener('click', function () {
-  try {
-    var a = document.createElement('a');
-    a.href = img.src;
-    a.download = 'uyir-blood-donate-qr.png';
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    showToast('✅ QR பதிவிறக்கம் தொடங்கியது');
-  } catch (e) {
-    showToast('QR பதிவிறக்க முடியவில்லை ❌', true);
+  if (!window.QRCode) {
+    wrap.appendChild(el('p', 'hint', '⚠️ QR காட்ட முடியவில்லை (library load ஆகல)'));
+    return;
   }
-});
-wrap.appendChild(dlBtn);
+
+  var uri = buildUpiUri(amt);
+  new QRCode(qrHolder, {
+    text: uri,
+    width: 200,
+    height: 200,
+    colorDark: '#000000',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  var dlBtn = el('button', 'ghost-btn', '⬇️ QR பதிவிறக்கு');
+  dlBtn.type = 'button';
+  dlBtn.style.marginTop = '8px';
+  dlBtn.addEventListener('click', function () {
+    try {
+      var img = qrHolder.querySelector('img');
+      var canvas = qrHolder.querySelector('canvas');
+      var dataUrl = img ? img.src : (canvas ? canvas.toDataURL('image/png') : null);
+      if (!dataUrl) { showToast('QR இன்னும் தயார் ஆகல ❌', true); return; }
+      var a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = 'uyir-blood-donate-qr.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('✅ QR உங்கள் மொபைலில் சேமிக்கப்பட்டது');
+    } catch (e) {
+      showToast('QR பதிவிறக்க முடியவில்லை ❌', true);
+    }
+  });
+  wrap.appendChild(dlBtn);
 }
 /* Decide flow: mobile → launch UPI app; desktop → show UPI ID + copy guidance */
 function proceedPay(){
