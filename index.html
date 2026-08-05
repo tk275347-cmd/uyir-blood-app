@@ -1076,20 +1076,26 @@ document.addEventListener('fb-auth-state-changed', function(e){
                         name: v.name || '', loc: v.loc || '', blood: v.blood || '',
                         mob: child.key,
                         wa: onlyDigits(v.whatsapp || '').slice(-10),
-                        cooldownUntil: v.cooldownUntil || null
+                        cooldownUntil: v.cooldownUntil || null,
+                        active: v.active !== false
                     });
                 });
             }
             myRecords = fetched;
             renderMyRecords();
             saveState();
+            /* checkbox/banner-ஐ DB-இல் இருக்கும் உண்மையான active மதிப்புக்கே sync செய்யவும் —
+             * இதுவரை இது browser default (off)-ல் தான் தங்கியிருந்தது, DB-ல் என்ன இருந்தாலும். */
+            syncActiveToggleFromRecords();
             /* toggleActive() records load ஆவதற்கு முன்பே அழுத்தப்பட்டிருந்தால்,
              * அந்த pending status-ஐ இப்போது load ஆன records எல்லாவற்றுக்கும் apply செய்யவும். */
             if (typeof window.pendingActiveStatus === 'boolean') {
                 var toApply = window.pendingActiveStatus;
                 window.pendingActiveStatus = null;
+                applyActiveStatusUI(toApply, true);
                 myRecords.forEach(function(rec){
                     if (!rec || !rec.mob) return;
+                    rec.active = toApply;
                     window.fbUpdate(window.fbRef(window.fbDB, 'records/' + rec.mob), { active: toApply })
                         .catch(function(error){ console.error("Pending status update failed: ", error); });
                 });
@@ -2812,12 +2818,10 @@ function editB(mob) {
 }
 
 /* 3. ஸ்டேட்டஸ் மாற்றுதல் - எந்த மாற்றமும் இல்லை, அப்படியே இருக்கலாம் */
-function toggleActive(elm, silent){
+function applyActiveStatusUI(isActiveNow, silent){
   var banner = document.getElementById('donorStatusBanner');
- if (!banner) {
- return;
- }
- var isActiveNow = elm.checked;
+  if (!banner) return;
+  if(scr('activeToggle')) scr('activeToggle').checked = isActiveNow;
   if(isActiveNow){
     banner.className = 'status-banner status-on';
     banner.textContent = '🟢 நீங்கள் தற்போது ஆக்டிவ் — ரிசீவர்கள் உங்களை தேட முடியும்';
@@ -2828,9 +2832,39 @@ function toggleActive(elm, silent){
     if(!silent) showToast('நீங்கள் இப்போது செயலற்ற நிலையில் 🔴');
   }
   saveState();
+}
+
+/* dashboard load ஆகும்போது (records DB-இல் இருந்து fetch ஆனதும்) checkbox/banner-ஐ
+ * DB-இல் உள்ள உண்மையான 'active' மதிப்புக்கு sync செய்யும் — DB-க்கு எதுவும் எழுதாது,
+ * UI-ஐ மட்டும் புதுப்பிக்கும். */
+function syncActiveToggleFromRecords(){
+  if (!myRecords || myRecords.length === 0) return;
+  var isActiveNow = myRecords.some(function(r){ return r && r.active; });
+  applyActiveStatusUI(isActiveNow, true);
+}
+
+function toggleActive(elm, silent){
+  var isActiveNow = elm.checked;
+  applyActiveStatusUI(isActiveNow, silent);
   // ஃபைரபேஸ் டேட்டாபேஸில் ஸ்டேட்டஸை உடனே அப்டேட் செய்ய
   if (!(window.fbDB && window.fbRef && window.fbUpdate)) {
-      console.warn('Status update: Firebase DB இன்னும் ready இல்லை, DB update skip ஆச்சு');
+      /* Firebase இன்னும் முழுசா ready ஆகாத நேரத்தில் (page load ஆன உடனேயே toggle
+       * பண்ணினால்) இங்கே வந்துவிடும். இதற்கு முன்பு இந்த status silently skip
+       * ஆகிவிட்டு, Firebase ready ஆனதும் மறுபடி apply ஆகவே இல்லை. இப்போது pending-ஆ
+       * வைத்து, Firebase ready ஆனதும் ('fb-auth-state-changed' event) தானாக retry
+       * செய்யும். */
+      console.warn('Status update: Firebase DB இன்னும் ready இல்லை, pending-ஆ வைத்து பின்னாடி retry செய்யும்');
+      window.pendingActiveStatus = isActiveNow;
+      if (!window._activeStatusRetryHooked) {
+          window._activeStatusRetryHooked = true;
+          document.addEventListener('fb-auth-state-changed', function retryPendingStatus(){
+              document.removeEventListener('fb-auth-state-changed', retryPendingStatus);
+              window._activeStatusRetryHooked = false;
+              if (typeof window.pendingActiveStatus === 'boolean' && typeof loadMyRecordsFromDB === 'function') {
+                  loadMyRecordsFromDB();
+              }
+          });
+      }
       return;
   }
   /* பழைய கோடு myRecords[0].mob ஒன்றை மட்டும் பயன்படுத்தியது. myRecords இன்னும்
@@ -2843,6 +2877,7 @@ function toggleActive(elm, silent){
   if (myRecords && myRecords.length > 0) {
       myRecords.forEach(function(rec){
           if (!rec || !rec.mob) return;
+          rec.active = isActiveNow;
           var recordRef = window.fbRef(window.fbDB, 'records/' + rec.mob);
           window.fbUpdate(recordRef, { active: isActiveNow })
               .then(function(){
@@ -2850,7 +2885,7 @@ function toggleActive(elm, silent){
               })
               .catch(function(error){
                   console.error("Firebase status update failed: ", error);
-                  if(!silent) showToast('ஸ்டேட்டஸ் Save ஆகல ❌', true);
+                  showToast('ஸ்டேட்டஸ் Save ஆகல ❌ — ' + (error && error.message ? error.message : ''), true);
               });
       });
       window.pendingActiveStatus = null;
@@ -2858,6 +2893,7 @@ function toggleActive(elm, silent){
       var editRef = window.fbRef(window.fbDB, 'records/' + window.editingMob);
       window.fbUpdate(editRef, { active: isActiveNow }).catch(function(error){
           console.error("Firebase status update failed: ", error);
+          showToast('ஸ்டேட்டஸ் Save ஆகல ❌ — ' + (error && error.message ? error.message : ''), true);
       });
   } else {
       console.warn('Status update: records இன்னும் load ஆகல், pending-ஆ வைத்து load முடிந்ததும் apply செய்யும்');
