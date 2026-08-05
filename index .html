@@ -2818,22 +2818,32 @@ function editB(mob) {
 }
 
 /* 3. ஸ்டேட்டஸ் மாற்றுதல் - எந்த மாற்றமும் இல்லை, அப்படியே இருக்கலாம் */
-function toggleActive(elm, silent){
-  var banner = document.getElementById('donorStatusBanner');
- if (!banner) {
- return;
- }
- var isActiveNow = elm.checked;
-  if(isActiveNow){
-    banner.className = 'status-banner status-on';
-    banner.textContent = '🟢 நீங்கள் தற்போது ஆக்டிவ் — ரிசீவர்கள் உங்களை தேட முடியும்';
-    if(!silent) showToast('நீங்கள் இப்போது ஆக்டிவ் 🟢');
-  } else {
-    banner.className = 'status-banner status-off';
-    banner.textContent = 'நீங்கள் தற்போது செயலற்ற நிலையில் உள்ளீர்கள்';
-    if(!silent) showToast('நீங்கள் இப்போது செயலற்ற நிலையில் 🔴');
-  }
-  saveState();
+function toggleActive(checkbox) {
+    var isActive = checkbox.checked;
+    
+    // UI-ல் உடனே மெசேஜ் காட்ட
+    var banner = document.getElementById('donorStatusBanner');
+    if(banner) {
+        banner.className = isActive ? 'status-banner status-on' : 'status-banner status-off';
+        banner.textContent = isActive ? 'நீங்கள் தற்போது ஆக்டிவ் நிலையில் உள்ளீர்கள்' : 'நீங்கள் தற்போது செயலற்ற நிலையில் உள்ளீர்கள்';
+    }
+
+    // Firebase-ல் உள்ள உங்கள் பதிவுகள் அனைத்திற்கும் ஸ்டேட்டஸை அப்டேட் செய்ய
+    if(window.fbReady && window.fbDB && window.fbUser && typeof myRecords !== 'undefined' && myRecords.length > 0) {
+        myRecords.forEach(function(rec) {
+            if(rec && rec.mob) {
+                var cleanMob = rec.mob.replace(/\D/g, ''); // எண்களை மட்டும் எடுக்க
+                window.fbUpdate(window.fbRef(window.fbDB, 'records/' + cleanMob), { active: isActive })
+                    .catch(function(err){ console.error("Status update failed:", err); });
+            }
+        });
+    }
+    
+    if(typeof saveState === 'function') {
+        saveState();
+    }
+}
+
  var mob = (myRecords && myRecords.length > 0) ? myRecords[0].mob : window.editingMob;
  // ஃபைரபேஸ் டேட்டாபேஸில் ஸ்டேட்டஸை உடனே அப்டேட் செய்ய
     if (window.fbDB && window.fbRef && window.fbUpdate && mob) {
@@ -2849,7 +2859,7 @@ function toggleActive(elm, silent){
   } else {
       console.warn('Status update: mob number கிடைக்கல, DB update skip ஆச்சு');
   }
-}
+
 /* ---------- Settings: mobile update & delete ---------- */
 // 1. மொபைல் அப்டேட் விண்டோ
 function openMobileUpdate(){
